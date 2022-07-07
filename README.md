@@ -47,7 +47,8 @@ An example snippet of the HuNavPlugin which is automatically inserted in the wor
 ## Dependencies
 
 * The HuNavSim: https://github.com/robotics-upo/hunav_sim
-* The ROS2 package *gazebo_ros_pkgs* is also required. 
+* The ROS2 package *gazebo_ros_pkgs* is also required: ```sh sudo apt install ros-foxy-gazebo-ros-pkgs ```
+* The gazebo models should be reacheable through the enviroment variable 'GAZEBO_MODEL_PATH'. You can source /usr/share/gazebo/setup.sh to stablish it.  
 
 ## Compilation
 
