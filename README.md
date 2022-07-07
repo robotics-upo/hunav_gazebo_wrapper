@@ -47,6 +47,7 @@ An example snippet of the HuNavPlugin which is automatically inserted in the wor
 ## Dependencies
 
 * The HuNavSim: https://github.com/robotics-upo/hunav_sim
+* The ROS2 package *gazebo_ros_pkgs* is also required. 
 
 ## Compilation
 
