@@ -61,6 +61,6 @@ An example snippet of the HuNavPlugin which is automatically inserted in the wor
 
 An example Gazebo world can be launched through:
 ```sh
-ros2 launch _hunav_gazebo_wrapper cafe.launch.py
+ros2 launch hunav_gazebo_wrapper cafe.launch.py
 ```
 
