@@ -22,6 +22,8 @@
 //#include <ament_index_cpp/get_package_prefix.hpp>
 //#include <ament_index_cpp/get_package_share_directory.hpp>
 
+using namespace tinyxml2;
+
 namespace hunav {
 
 using namespace std::chrono_literals;
@@ -80,6 +82,7 @@ WorldGenerator::WorldGenerator() : Node("hunav_gazebo_world_generator") {
 WorldGenerator::~WorldGenerator() {}
 
 void WorldGenerator::readAgentParams() {
+
   auto parameters_client =
       std::make_shared<rclcpp::SyncParametersClient>(this, "hunav_loader");
   while (!parameters_client->wait_for_service(1s)) {
@@ -104,8 +107,6 @@ void WorldGenerator::readAgentParams() {
   //     std::cout << "Parameter value (" << parameter.get_type_name()
   //               << "): " << parameter.value_to_string() << std::endl;
   //   }
-
-  hunav_msgs::msg::Agents agents;
 
   auto agent_names = parameters[1].as_string_array();
   for (std::string an : agent_names) {
@@ -160,8 +161,16 @@ void WorldGenerator::readAgentParams() {
                 << " y:" << p.position.y << std::endl;
     }
 
-    agents.agents.push_back(a);
+    agents_.agents.push_back(a);
   }
+}
+
+bool WorldGenerator::processXML() {
+  tinyxml2::XMLDocument doc;
+  FILE *f = fopen(base_world_.c_str(), "rw");
+  doc.LoadFile(f);
+  // doc.LoadFile(base_world_);
+  return true;
 }
 
 } // namespace hunav

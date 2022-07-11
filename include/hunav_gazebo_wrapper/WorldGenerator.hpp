@@ -57,6 +57,8 @@ public:
    */
   void readAgentParams();
 
+  bool processXML();
+
 private:
   void tokenize(std::string const &str, const char delim,
                 std::vector<std::string> &out) {
@@ -77,6 +79,7 @@ private:
   std::string plug_robot_name_;
   std::string plug_global_frame_;
   std::vector<std::string> plug_ignore_models_;
+  hunav_msgs::msg::Agents agents_;
 };
 } // namespace hunav
 

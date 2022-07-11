@@ -10,6 +10,8 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 find_package(ament_cmake REQUIRED)
+find_package(tinyxml2_vendor REQUIRED)
+find_package(TinyXML2 REQUIRED)
 find_package(ament_index_cpp REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(gazebo_ros REQUIRED)
@@ -18,16 +20,19 @@ find_package(gazebo REQUIRED)
 find_package(hunav_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
-#find_package(TinyXML2 REQUIRED)
+
 
 include_directories(include)
 include_directories(SYSTEM
   #${Boost_INCLUDE_DIRS}
   ${GAZEBO_INCLUDE_DIRS}
+  ${TINYXML2_INCLUDE_DIR}
 )
 
 link_directories(
   ${GAZEBO_LIBRARY_DIRS}
+  ${TINYXML2_LIBRARY_DIRS}
+  #${TINYXML2_LIBRARY_PATH}
 )
 
 
@@ -40,13 +45,14 @@ ament_target_dependencies(HuNavPlugin
   "hunav_msgs" 
   "tf2" 
   "tf2_geometry_msgs"
-)
+) 
 ament_export_libraries(HuNavPlugin)
 target_link_libraries(HuNavPlugin ${GAZEBO_LIBRARIES}) #${ignition-common3_LIBRARIES}
 
 
 add_executable(hunav_gazebo_world_generator src/WorldGenerator.cpp)
-ament_target_dependencies(hunav_gazebo_world_generator rclcpp hunav_msgs geometry_msgs)
+ament_target_dependencies(hunav_gazebo_world_generator rclcpp hunav_msgs geometry_msgs tinyxml2_vendor)
+target_link_libraries(hunav_gazebo_world_generator ${TINYXML2_LIBRARY})
 
 install(TARGETS hunav_gazebo_world_generator
   DESTINATION lib/${PROJECT_NAME}
