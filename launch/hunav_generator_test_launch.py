@@ -1,7 +1,8 @@
 
-from os import path
-from os import environ
-from os import pathsep
+# from os import path
+# from os import environ
+# from os import pathsep
+import os, stat
 from scripts import GazeboRosPaths
 from ament_index_python.packages import get_package_share_directory
 
@@ -80,6 +81,17 @@ def generate_launch_description():
         world_file_name
     ])
 
+    # No need to give permissions, so I comment this part
+    # Give permissions to the world files so I can read and write
+    # path = os.path.join(get_package_share_directory('hunav_gazebo_wrapper'),
+    #             'worlds')
+    # for root, dirs, files in os.walk(path):
+    #     for w in files:
+    #         fname = os.path.join(root, w)
+    #         print("fname: ", fname)
+    #         os.chmod(fname, stat.S_IRWXU) # | stat.S_IRWXO)
+
+
     # the node looks for the base_world file in the directory 'worlds'
     # of the package hunav_gazebo_plugin direclty. So we do not need to 
     # indicate the path
@@ -112,6 +124,7 @@ def generate_launch_description():
 
     ld = LaunchDescription(ARGS)
 
+    #ld.add_action(permission)
     # Load the sim configuration file as ROS2 params
     ld.add_action(hunav_loader_node)
     # Read the sim configuration params from the hunav_loader node

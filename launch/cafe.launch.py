@@ -56,7 +56,7 @@ def generate_launch_description():
     world_path = PathJoinSubstitution([
         FindPackageShare('hunav_gazebo_wrapper'),
         'worlds',
-        'prueba.world'
+        'generatedWorld.world'
     ])
 
     # Crear world_path2 
