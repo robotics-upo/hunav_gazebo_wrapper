@@ -56,9 +56,10 @@ def generate_launch_description():
     world_path = PathJoinSubstitution([
         FindPackageShare('hunav_gazebo_wrapper'),
         'worlds',
-        'cafe2.world'
+        'prueba.world'
     ])
 
+    # Crear world_path2 
     gzserver_cmd = [
         'gzserver ',
         '--pause ',
