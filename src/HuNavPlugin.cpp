@@ -199,8 +199,23 @@ void HuNavPlugin::Load(gazebo::physics::WorldPtr _world, sdf::ElementPtr _sdf) {
       trajectoryInfo->type = DEF_WALKING_ANIMATION;
     }
     trajectoryInfo->duration = 1.0;
-    // actor->AlignBvh(common::Skeleton *_skel,
+
+    /// \brief Set a custom trajectory for the actor, using one of the
+    /// existing animations. This will override any trajectories previously
+    /// defined. When a custom trajectory is defined, the script time must
+    /// be set with `SetScriptTime` in order to play the animation.
+    /// \param[in] _trajInfo Information about custom trajectory.
+    /// \sa ResetCustomTrajectory, SetScriptTime
+    /// public: void SetCustomTrajectory(TrajectoryInfoPtr &_trajInfo);
+
+    // SetScriptTime(const double _time);
+    // gazebo::physics::Actor::UpdateParameters	(	sdf::ElementPtr
+    // _sdf ) actor->AlignBvh(common::Skeleton *_skel,
     //      const std::map<std::string, std::string> &_skelMap)
+    // actor->StopAnimation(), Play()
+    // actor->SetAnimation(common::PoseAnimationPtr _anim)
+    // actor->SetAnimation(const common::PoseAnimationPtr &_anim,
+    // boost::function< void()> _onComplete)
     actor->SetCustomTrajectory(trajectoryInfo);
   }
 }
@@ -784,16 +799,40 @@ void HuNavPluginPrivate::UpdateGazeboPedestrians(
     //     th:%.2f", actor->GetId(), actor->WorldPose().Pos().X(),
     //     actor->WorldPose().Pos().Y(),
     //     actor->WorldPose().Rot().Euler().Z());
-    double animationFactor;
-    auto skelAnims = actor->SkeletonAnimations();
-    // if (skelAnims.find("walking") != skelAnims.end()) {
-    //  animationFactor = 5.1;
-    if (skelAnims.find("walking_07_01") != skelAnims.end()) {
-      animationFactor = 1.0;
-    } else if (skelAnims.find("142_17-walk_scared.bvh") != skelAnims.end()) {
-      animationFactor = 0.5;
-    } else {
-      animationFactor = 5.1;
+
+    int index = -1;
+    for (unsigned int i = 0; i < pedestrians.size(); i++) {
+      if (a.id == pedestrians[i].id &&
+          a.behavior_state != this->pedestrians[i].behavior_state) {
+        this->pedestrians[i].behavior_state = a.behavior_state;
+        index = i;
+        break;
+      }
+    }
+
+    // TODO: select better animations for each behavior
+    // and adjust the animationFactor value for each case
+    double animationFactor = 3.0;
+    // change the animation
+    if (index > -1) {
+      gazebo::physics::TrajectoryInfoPtr trajectoryInfo;
+      trajectoryInfo.reset(new gazebo::physics::TrajectoryInfo());
+      trajectoryInfo->id = a.id;
+      trajectoryInfo->duration = 1.0;
+      if (a.behavior_state == hunav_msgs::msg::Agent::BEH_NO_ACTIVE) {
+        trajectoryInfo->type = "no_active";
+        // RCLCPP_INFO(rosnode->get_logger(),
+        //            "changing behavior %i of %s to 'no_active'",
+        //            (int)a.behavior, actor->GetName().c_str());
+      } else {
+        trajectoryInfo->type = "active";
+        // RCLCPP_INFO(rosnode->get_logger(),
+        //            "changing behavior %i of %s to 'active'", (int)a.behavior,
+        //            actor->GetName().c_str());
+      }
+      actor->Stop();
+      actor->SetCustomTrajectory(trajectoryInfo);
+      actor->Play();
     }
     actor->SetScriptTime(actor->ScriptTime() +
                          (distanceTraveled * animationFactor));

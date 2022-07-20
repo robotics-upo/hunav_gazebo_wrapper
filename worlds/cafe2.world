@@ -110,19 +110,19 @@
       <uri>model://cafe_table</uri>
     </include>
 
-    <actor name="actor1">
+    <actor name="actor1-green"> 
       <pose>-1 2 1.25 0 0 0</pose>
       <skin>
         <filename>walk-green.dae</filename>
         <scale>1.0</scale>
       </skin>
-      <!--<animation name="active_1">
-        <filename>141_20-waiting.bvh</filename>
+      <animation name="no_active">
+        <filename>07_01-walk.bvh</filename>
         <scale>1.000000</scale>
         <interpolate_x>true</interpolate_x>
-      </animation>-->
-      <animation name="no_active">
-        <filename>walk.dae</filename>
+      </animation>
+      <animation name="active">
+        <filename>142_04-walk_cool.bvh</filename>
         <scale>1.000000</scale>
         <interpolate_x>true</interpolate_x>
       </animation>
@@ -142,35 +142,40 @@
     </actor>
 
  
-    <actor name="actor2">
+    <actor name="actor2-blue">
       <pose>-1 -1 1.25 0 0 0</pose>
       <skin>
         <filename>walk-blue.dae</filename> 
         <scale>1.0</scale>
       </skin>
       <animation name="no_active">
+        <filename>142_08-walk_happy.bvh</filename>
+        <scale>1.0</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+      <animation name="active">
         <filename>142_17-walk_scared.bvh</filename>
         <scale>1.0</scale>
         <interpolate_x>true</interpolate_x>
       </animation>
-      <!--<animation name="no_active">
-        <filename>walk.dae</filename>
-        <scale>1.000000</scale>
-        <interpolate_x>true</interpolate_x>
-      </animation>-->
     </actor>
 
 	
 
-    <actor name="actor4">
+    <actor name="actor4-red">
       <pose>3 0 1.25 0 0 1.57</pose>
       <skin>
         <filename>walk-red.dae</filename> 
         <scale>1.0</scale>
       </skin>
       <animation name="no_active">
-        <filename>walk.dae</filename>
+        <filename>142_19-walk_shy.bvh</filename>
         <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+      <animation name="active">
+        <filename>142_01-walk_childist.bvh</filename>
+        <scale>1.0</scale>
         <interpolate_x>true</interpolate_x>
       </animation>
     </actor>
