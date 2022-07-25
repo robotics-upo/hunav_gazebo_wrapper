@@ -171,7 +171,10 @@ bool WorldGenerator::processXML() {
 
   std::string skin_filename[] = {"walk.dae", "walk-green.dae", "walk-blue.dae",
                                  "walk-red.dae", "stand.dae"};
-  std::string animation_filename[] = {"walk.dae"};
+  std::string animation_filename[] = {"07_01-walk.bvh", "142_04-walk_cool.bvh",
+                                 "141_20-waiting.bvh", "142_01-walk_childist.bvh",
+                                 "120_19-walk_slow.bvh", "142_08-walk_happy.bvh",
+                                 "142_17-walk_scared.bvh", "17_01-walk_with_anger.bvh"};
 
   // load the base world file
   tinyxml2::XMLDocument doc;
@@ -259,14 +262,62 @@ bool WorldGenerator::processXML() {
     tinyxml2::XMLElement *pScale = doc.NewElement("scale");
     pScale->SetText(1.0f);
 
+    // Set no_active animation
     tinyxml2::XMLElement *pAnimation = doc.NewElement("animation");
     pAnimation->SetAttribute("name", "no_active");
+
     tinyxml2::XMLElement *pFilename1 = doc.NewElement("filename");
-    pFilename1->SetText(animation_filename[0].c_str());
+
+    if(a.behavior == hunav_msgs::msg::Agent::BEH_REGULAR ||
+       a.behavior == hunav_msgs::msg::Agent::BEH_SURPRISED ||
+       a.behavior == hunav_msgs::msg::Agent::BEH_THREATENING
+       ){
+      pFilename1->SetText(animation_filename[0].c_str());
+    }
+    else if(a.behavior == hunav_msgs::msg::Agent::BEH_IMPASSIVE){
+      pFilename1->SetText(animation_filename[1].c_str());
+    }
+    else if(a.behavior == hunav_msgs::msg::Agent::BEH_SCARED){
+      pFilename1->SetText(animation_filename[5].c_str());
+    }
+    else if(a.behavior == hunav_msgs::msg::Agent::BEH_CURIOUS){
+      pFilename1->SetText(animation_filename[1].c_str());
+    }
+
     tinyxml2::XMLElement *pScale1 = doc.NewElement("scale");
     pScale1->SetText("1.0");
     tinyxml2::XMLElement *pInterpolate = doc.NewElement("interpolate_x");
     pInterpolate->SetText("true");
+
+    // Set active animation
+    tinyxml2::XMLElement *pAnimation1 = doc.NewElement("animation");
+    pAnimation1->SetAttribute("name", "active");
+
+    tinyxml2::XMLElement *pFilename2 = doc.NewElement("filename");
+
+    if(a.behavior == hunav_msgs::msg::Agent::BEH_REGULAR){
+      pFilename2->SetText(animation_filename[0].c_str());
+    }
+    else if(a.behavior == hunav_msgs::msg::Agent::BEH_IMPASSIVE){
+      pFilename2->SetText(animation_filename[1].c_str());
+    }
+    else if(a.behavior == hunav_msgs::msg::Agent::BEH_SURPRISED){
+      pFilename2->SetText(animation_filename[2].c_str());
+    }
+    else if(a.behavior == hunav_msgs::msg::Agent::BEH_THREATENING){
+      pFilename2->SetText(animation_filename[7].c_str());
+    }
+    else if(a.behavior == hunav_msgs::msg::Agent::BEH_SCARED){
+      pFilename2->SetText(animation_filename[6].c_str());
+    }
+    else if(a.behavior == hunav_msgs::msg::Agent::BEH_CURIOUS){
+      pFilename2->SetText(animation_filename[4].c_str());
+    }
+
+    tinyxml2::XMLElement *pScale2 = doc.NewElement("scale");
+    pScale2->SetText("1.0");
+    tinyxml2::XMLElement *pInterpolate1 = doc.NewElement("interpolate_x");
+    pInterpolate1->SetText("true");
 
     // Insert actor in the XML
     if (first) {
@@ -290,6 +341,7 @@ bool WorldGenerator::processXML() {
       skin->InsertFirstChild(pFilename);
       skin->InsertAfterChild(pFilename, pScale);
 
+      // Insert no_active animation
       actors->InsertAfterChild(pSkin, pAnimation);
       tinyxml2::XMLElement *animation = doc.FirstChildElement("sdf")
                                             ->FirstChildElement("world")
@@ -297,6 +349,16 @@ bool WorldGenerator::processXML() {
                                             ->FirstChildElement("animation");
       animation->InsertFirstChild(pFilename1);
       animation->InsertAfterChild(pFilename1, pScale1);
+
+      // Insert active animation
+      actors->InsertAfterChild(animation, pAnimation1);
+      tinyxml2::XMLElement *animation_active = doc.FirstChildElement("sdf")
+                                                  ->FirstChildElement("world")
+                                                  ->FirstChildElement("actor")
+                                                  ->LastChildElement("animation");
+      animation_active->InsertFirstChild(pFilename2); 
+      animation_active->InsertAfterChild(pFilename2, pScale2);  
+      animation_active->InsertAfterChild(pScale2, pInterpolate1);                                      
     } else {
       tinyxml2::XMLElement *pInclude = doc.FirstChildElement("sdf")
                                            ->FirstChildElement("world")
@@ -317,6 +379,7 @@ bool WorldGenerator::processXML() {
       skin->InsertFirstChild(pFilename);
       skin->InsertAfterChild(pFilename, pScale);
 
+      // Insert no_active animation
       actors->InsertAfterChild(pSkin, pAnimation);
       tinyxml2::XMLElement *animation = doc.FirstChildElement("sdf")
                                             ->FirstChildElement("world")
@@ -324,6 +387,16 @@ bool WorldGenerator::processXML() {
                                             ->FirstChildElement("animation");
       animation->InsertFirstChild(pFilename1);
       animation->InsertAfterChild(pFilename1, pScale1);
+
+      // Insert active animation
+      actors->InsertAfterChild(animation, pAnimation1);
+      tinyxml2::XMLElement *animation_active = doc.FirstChildElement("sdf")
+                                                  ->FirstChildElement("world")
+                                                  ->LastChildElement("actor")
+                                                  ->LastChildElement("animation");
+      animation_active->InsertFirstChild(pFilename2); 
+      animation_active->InsertAfterChild(pFilename2, pScale2);  
+      animation_active->InsertAfterChild(pScale2, pInterpolate1);
     }
   }
 

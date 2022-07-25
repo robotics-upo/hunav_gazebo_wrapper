@@ -812,7 +812,52 @@ void HuNavPluginPrivate::UpdateGazeboPedestrians(
 
     // TODO: select better animations for each behavior
     // and adjust the animationFactor value for each case
-    double animationFactor = 3.0;
+    double animationFactor;
+
+    if(a.behavior_state == hunav_msgs::msg::Agent::BEH_NO_ACTIVE){
+      if(a.behavior == hunav_msgs::msg::Agent::BEH_REGULAR || 
+        a.behavior == hunav_msgs::msg::Agent::BEH_SURPRISED ||
+        a.behavior == hunav_msgs::msg::Agent::BEH_THREATENING){
+
+        animationFactor = 1.5;
+      }
+      else if(a.behavior == hunav_msgs::msg::Agent::BEH_IMPASSIVE){
+        animationFactor = 1.5;
+      }
+      else if(a.behavior == hunav_msgs::msg::Agent::BEH_SCARED){
+        animationFactor = 2.5;
+      }
+      else if(a.behavior == hunav_msgs::msg::Agent::BEH_CURIOUS){
+        animationFactor = 1.5;
+      }
+      else{
+        animationFactor = 1.0;
+      }
+    }
+    else{
+      if(a.behavior == hunav_msgs::msg::Agent::BEH_REGULAR){
+        animationFactor = 1.5;
+      }
+      else if(a.behavior == hunav_msgs::msg::Agent::BEH_IMPASSIVE){
+        animationFactor = 1.5;
+      }
+      else if(a.behavior == hunav_msgs::msg::Agent::BEH_SURPRISED){
+        animationFactor = 1.0;
+      }
+      else if(a.behavior == hunav_msgs::msg::Agent::BEH_THREATENING){
+        animationFactor = 1.0;
+      }
+      else if(a.behavior == hunav_msgs::msg::Agent::BEH_SCARED){
+        animationFactor = 1.5;
+      }
+      else if(a.behavior == hunav_msgs::msg::Agent::BEH_CURIOUS){
+        animationFactor = 4.0;
+      }
+      else{
+        animationFactor = 1.0;
+      }
+    }
+    
     // change the animation
     if (index > -1) {
       gazebo::physics::TrajectoryInfoPtr trajectoryInfo;
@@ -824,11 +869,13 @@ void HuNavPluginPrivate::UpdateGazeboPedestrians(
         // RCLCPP_INFO(rosnode->get_logger(),
         //            "changing behavior %i of %s to 'no_active'",
         //            (int)a.behavior, actor->GetName().c_str());
+        
       } else {
         trajectoryInfo->type = "active";
         // RCLCPP_INFO(rosnode->get_logger(),
         //            "changing behavior %i of %s to 'active'", (int)a.behavior,
         //            actor->GetName().c_str());
+        
       }
       actor->Stop();
       actor->SetCustomTrajectory(trajectoryInfo);

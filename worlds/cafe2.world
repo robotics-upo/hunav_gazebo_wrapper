@@ -1,4 +1,3 @@
-<!-- Usage notes are located in this file, look for "Usage"-->
 <?xml version="1.0" ?>
 <sdf version="1.5">
   <world name="default">
@@ -122,7 +121,7 @@
         <interpolate_x>true</interpolate_x>
       </animation>
       <animation name="active">
-        <filename>142_04-walk_cool.bvh</filename>
+        <filename>17_01-walk_with_anger.bvh</filename>
         <scale>1.000000</scale>
         <interpolate_x>true</interpolate_x>
       </animation>
@@ -149,7 +148,7 @@
         <scale>1.0</scale>
       </skin>
       <animation name="no_active">
-        <filename>142_08-walk_happy.bvh</filename>
+        <filename>07_01-walk.bvh</filename>
         <scale>1.0</scale>
         <interpolate_x>true</interpolate_x>
       </animation>
@@ -169,12 +168,12 @@
         <scale>1.0</scale>
       </skin>
       <animation name="no_active">
-        <filename>142_19-walk_shy.bvh</filename>
+        <filename>142_04-walk_cool.bvh</filename>
         <scale>1.000000</scale>
         <interpolate_x>true</interpolate_x>
       </animation>
       <animation name="active">
-        <filename>142_01-walk_childist.bvh</filename>
+        <filename>120_19-walk_slow.bvh</filename>
         <scale>1.0</scale>
         <interpolate_x>true</interpolate_x>
       </animation>
