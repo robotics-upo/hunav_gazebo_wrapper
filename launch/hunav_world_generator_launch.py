@@ -74,7 +74,7 @@ def generate_launch_description():
         #arguments=['--ros-args', '--params-file', conf_file]
     )
 
-    # agent configuration file
+    # world base file
     world_file = PathJoinSubstitution([
         FindPackageShare('hunav_gazebo_wrapper'),
         'worlds',

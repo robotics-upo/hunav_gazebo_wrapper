@@ -27,6 +27,8 @@ using namespace tinyxml2;
 namespace hunav {
 
 using namespace std::chrono_literals;
+using std::placeholders::_1;
+using std::placeholders::_2;
 
 WorldGenerator::WorldGenerator() : Node("hunav_gazebo_world_generator") {
 
@@ -37,6 +39,24 @@ WorldGenerator::WorldGenerator() : Node("hunav_gazebo_world_generator") {
              ".goals"};
   // names of the goal parameters
   goal_params_ = {".x", ".y", ".h"};
+
+  agents_srv_ = this->create_service<hunav_msgs::srv::GetAgents>(
+      std::string("get_agents"),
+      std::bind(&hunav::WorldGenerator::getAgentsService, this, _1, _2));
+  // agents_srv_ = this->create_service<hunav_msgs::srv::GetAgents>(
+  //    std::string("get_agents"), &hunav::WorldGenerator::getAgentsService);
+
+  // Read the plugin parameters
+  readPluginParams();
+  // Read the agents parameters
+  readAgentParams();
+  // Generate the world
+  processXML();
+}
+
+WorldGenerator::~WorldGenerator() {}
+
+void WorldGenerator::readPluginParams() {
 
   // Get the path to the worlds directory
   // std::string pkg_shared_dir;
@@ -74,12 +94,7 @@ WorldGenerator::WorldGenerator() : Node("hunav_gazebo_world_generator") {
   for (std::string st : plug_ignore_models_) {
     RCLCPP_INFO(this->get_logger(), "Ignore_model: %s", st.c_str());
   }
-  // call readAgentParams here only for testing!
-  readAgentParams();
-  processXML();
 }
-
-WorldGenerator::~WorldGenerator() {}
 
 void WorldGenerator::readAgentParams() {
 
@@ -166,15 +181,26 @@ void WorldGenerator::readAgentParams() {
   }
 }
 
+void WorldGenerator::getAgentsService(
+    const std::shared_ptr<hunav_msgs::srv::GetAgents::Request> request,
+    std::shared_ptr<hunav_msgs::srv::GetAgents::Response> response) {
+
+  int r = request->empty;
+  response->agents = agents_;
+  // turn off the node since we do not use it anymore
+  rclcpp::shutdown();
+}
+
 bool WorldGenerator::processXML() {
   // std::cout << base_world_ << std::endl;
 
   std::string skin_filename[] = {"walk.dae", "walk-green.dae", "walk-blue.dae",
                                  "walk-red.dae", "stand.dae"};
-  std::string animation_filename[] = {"07_01-walk.bvh", "142_04-walk_cool.bvh",
-                                 "141_20-waiting.bvh", "142_01-walk_childist.bvh",
-                                 "120_19-walk_slow.bvh", "142_08-walk_happy.bvh",
-                                 "142_17-walk_scared.bvh", "17_01-walk_with_anger.bvh"};
+  std::string animation_filename[] = {
+      "07_01-walk.bvh",         "142_04-walk_cool.bvh",
+      "141_20-waiting.bvh",     "142_01-walk_childist.bvh",
+      "120_19-walk_slow.bvh",   "142_08-walk_happy.bvh",
+      "142_17-walk_scared.bvh", "17_01-walk_with_anger.bvh"};
 
   // load the base world file
   tinyxml2::XMLDocument doc;
@@ -191,7 +217,63 @@ bool WorldGenerator::processXML() {
     return false;
   }
 
-  // std::cout << "Start" << std::endl;
+  // CREATE PHYSICS TAG
+  // <physics type="ode">
+  //   <max_step_size>0.01</max_step_size>
+  //   <real_time_factor>1</real_time_factor>
+  //   <real_time_update_rate>100</real_time_update_rate>
+  // </physics>
+  tinyxml2::XMLElement *physics_tag = doc.NewElement("physics");
+  physics_tag->SetAttribute("type", "ode");
+  tinyxml2::XMLElement *max_step = doc.NewElement("max_step_size");
+  max_step->SetText(0.01);
+  tinyxml2::XMLElement *time_factor = doc.NewElement("real_time_factor");
+  time_factor->SetText(1);
+  tinyxml2::XMLElement *time_rate = doc.NewElement("real_time_update_rate");
+  time_rate->SetText(100);
+
+  // Check if the tag <physics> exists
+  tinyxml2::XMLElement *physics = doc.FirstChildElement("sdf")
+                                      ->FirstChildElement("world")
+                                      ->FirstChildElement("physics");
+  // if does not exist, we add it
+  if (physics == nullptr) {
+    // we add it
+    // Insert plugin in the XML
+    doc.FirstChildElement("sdf")->FirstChildElement("world")->InsertFirstChild(
+        physics_tag);
+    tinyxml2::XMLElement *phy = doc.FirstChildElement("sdf")
+                                    ->FirstChildElement("world")
+                                    ->FirstChildElement("physics");
+    phy->InsertFirstChild(max_step);
+    phy->InsertAfterChild(max_step, time_factor);
+    phy->InsertAfterChild(time_factor, time_rate);
+
+  } else {
+    tinyxml2::XMLElement *phy = doc.FirstChildElement("sdf")
+                                    ->FirstChildElement("world")
+                                    ->FirstChildElement("physics");
+    XMLElement *mss = phy->FirstChildElement("max_step_size");
+    if (mss == nullptr) {
+      phy->InsertFirstChild(max_step);
+      mss = phy->FirstChildElement("max_step_size");
+    }
+    mss->SetText(0.01);
+
+    XMLElement *rtf = phy->FirstChildElement("real_time_factor");
+    if (rtf == nullptr) {
+      phy->InsertAfterChild(max_step, time_factor);
+      rtf = phy->FirstChildElement("real_time_factor");
+    }
+    rtf->SetText(1);
+
+    XMLElement *rtur = phy->FirstChildElement("real_time_update_rate");
+    if (rtur == nullptr) {
+      phy->InsertAfterChild(time_factor, time_rate);
+      rtur = phy->FirstChildElement("real_time_update_rate");
+    }
+    rtur->SetText(100);
+  }
 
   // CREATE PLUGIN TAG
   tinyxml2::XMLElement *pNewPlugin = doc.NewElement("plugin");
@@ -268,19 +350,15 @@ bool WorldGenerator::processXML() {
 
     tinyxml2::XMLElement *pFilename1 = doc.NewElement("filename");
 
-    if(a.behavior == hunav_msgs::msg::Agent::BEH_REGULAR ||
-       a.behavior == hunav_msgs::msg::Agent::BEH_SURPRISED ||
-       a.behavior == hunav_msgs::msg::Agent::BEH_THREATENING
-       ){
+    if (a.behavior == hunav_msgs::msg::Agent::BEH_REGULAR ||
+        a.behavior == hunav_msgs::msg::Agent::BEH_SURPRISED ||
+        a.behavior == hunav_msgs::msg::Agent::BEH_THREATENING) {
       pFilename1->SetText(animation_filename[0].c_str());
-    }
-    else if(a.behavior == hunav_msgs::msg::Agent::BEH_IMPASSIVE){
+    } else if (a.behavior == hunav_msgs::msg::Agent::BEH_IMPASSIVE) {
       pFilename1->SetText(animation_filename[1].c_str());
-    }
-    else if(a.behavior == hunav_msgs::msg::Agent::BEH_SCARED){
+    } else if (a.behavior == hunav_msgs::msg::Agent::BEH_SCARED) {
       pFilename1->SetText(animation_filename[5].c_str());
-    }
-    else if(a.behavior == hunav_msgs::msg::Agent::BEH_CURIOUS){
+    } else if (a.behavior == hunav_msgs::msg::Agent::BEH_CURIOUS) {
       pFilename1->SetText(animation_filename[1].c_str());
     }
 
@@ -295,22 +373,17 @@ bool WorldGenerator::processXML() {
 
     tinyxml2::XMLElement *pFilename2 = doc.NewElement("filename");
 
-    if(a.behavior == hunav_msgs::msg::Agent::BEH_REGULAR){
+    if (a.behavior == hunav_msgs::msg::Agent::BEH_REGULAR) {
       pFilename2->SetText(animation_filename[0].c_str());
-    }
-    else if(a.behavior == hunav_msgs::msg::Agent::BEH_IMPASSIVE){
+    } else if (a.behavior == hunav_msgs::msg::Agent::BEH_IMPASSIVE) {
       pFilename2->SetText(animation_filename[1].c_str());
-    }
-    else if(a.behavior == hunav_msgs::msg::Agent::BEH_SURPRISED){
+    } else if (a.behavior == hunav_msgs::msg::Agent::BEH_SURPRISED) {
       pFilename2->SetText(animation_filename[2].c_str());
-    }
-    else if(a.behavior == hunav_msgs::msg::Agent::BEH_THREATENING){
+    } else if (a.behavior == hunav_msgs::msg::Agent::BEH_THREATENING) {
       pFilename2->SetText(animation_filename[7].c_str());
-    }
-    else if(a.behavior == hunav_msgs::msg::Agent::BEH_SCARED){
+    } else if (a.behavior == hunav_msgs::msg::Agent::BEH_SCARED) {
       pFilename2->SetText(animation_filename[6].c_str());
-    }
-    else if(a.behavior == hunav_msgs::msg::Agent::BEH_CURIOUS){
+    } else if (a.behavior == hunav_msgs::msg::Agent::BEH_CURIOUS) {
       pFilename2->SetText(animation_filename[4].c_str());
     }
 
@@ -352,13 +425,14 @@ bool WorldGenerator::processXML() {
 
       // Insert active animation
       actors->InsertAfterChild(animation, pAnimation1);
-      tinyxml2::XMLElement *animation_active = doc.FirstChildElement("sdf")
-                                                  ->FirstChildElement("world")
-                                                  ->FirstChildElement("actor")
-                                                  ->LastChildElement("animation");
-      animation_active->InsertFirstChild(pFilename2); 
-      animation_active->InsertAfterChild(pFilename2, pScale2);  
-      animation_active->InsertAfterChild(pScale2, pInterpolate1);                                      
+      tinyxml2::XMLElement *animation_active =
+          doc.FirstChildElement("sdf")
+              ->FirstChildElement("world")
+              ->FirstChildElement("actor")
+              ->LastChildElement("animation");
+      animation_active->InsertFirstChild(pFilename2);
+      animation_active->InsertAfterChild(pFilename2, pScale2);
+      animation_active->InsertAfterChild(pScale2, pInterpolate1);
     } else {
       tinyxml2::XMLElement *pInclude = doc.FirstChildElement("sdf")
                                            ->FirstChildElement("world")
@@ -390,12 +464,13 @@ bool WorldGenerator::processXML() {
 
       // Insert active animation
       actors->InsertAfterChild(animation, pAnimation1);
-      tinyxml2::XMLElement *animation_active = doc.FirstChildElement("sdf")
-                                                  ->FirstChildElement("world")
-                                                  ->LastChildElement("actor")
-                                                  ->LastChildElement("animation");
-      animation_active->InsertFirstChild(pFilename2); 
-      animation_active->InsertAfterChild(pFilename2, pScale2);  
+      tinyxml2::XMLElement *animation_active =
+          doc.FirstChildElement("sdf")
+              ->FirstChildElement("world")
+              ->LastChildElement("actor")
+              ->LastChildElement("animation");
+      animation_active->InsertFirstChild(pFilename2);
+      animation_active->InsertAfterChild(pFilename2, pScale2);
       animation_active->InsertAfterChild(pScale2, pInterpolate1);
     }
   }

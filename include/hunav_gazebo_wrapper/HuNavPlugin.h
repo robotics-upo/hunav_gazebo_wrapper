@@ -30,10 +30,7 @@
 #include <vector>
 
 // Gazebo
-#include "gazebo/common/BVHLoader.hh"
 #include "gazebo/common/Plugin.hh"
-#include "gazebo/common/Skeleton.hh"
-#include "gazebo/common/SkeletonAnimation.hh"
 #include "gazebo/physics/physics.hh"
 #include "gazebo/util/system.hh"
 #include <gazebo/physics/Model.hh>
@@ -46,12 +43,14 @@
 #include "hunav_msgs/msg/agent.hpp"
 #include "hunav_msgs/msg/agents.hpp"
 #include "hunav_msgs/srv/compute_agents.hpp"
+#include "hunav_msgs/srv/get_agents.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include <tf2/LinearMath/Matrix3x3.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
-namespace gazebo_ros {
+// namespace gazebo_ros {
+namespace hunav {
 
 class HuNavPluginPrivate;
 
@@ -72,5 +71,5 @@ public:
 private:
   std::unique_ptr<HuNavPluginPrivate> hnav_;
 };
-} // namespace gazebo_ros
+} // namespace hunav
 #endif

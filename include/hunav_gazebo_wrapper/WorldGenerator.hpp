@@ -22,6 +22,7 @@
 #define HUNAVPLUGIN_WORLDGENERATOR_HH_
 
 #include "hunav_msgs/msg/agents.hpp"
+#include "hunav_msgs/srv/get_agents.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include <functional>
 #include <geometry_msgs/msg/pose.hpp>
@@ -51,6 +52,11 @@ public:
   ~WorldGenerator();
 
   /**
+   * @brief
+   */
+  void readPluginParams();
+
+  /**
    * @brief read the simulation parameters from
    * the hunav_loader node
    *
@@ -59,6 +65,13 @@ public:
 
   bool processXML();
 
+  std::shared_ptr<hunav_msgs::msg::Agents> getAgents() {
+    return std::make_shared<hunav_msgs::msg::Agents>(agents_);
+  }
+
+  void getAgentsService(
+      const std::shared_ptr<hunav_msgs::srv::GetAgents::Request> request,
+      std::shared_ptr<hunav_msgs::srv::GetAgents::Response> response);
 
 private:
   void tokenize(std::string const &str, const char delim,
@@ -81,6 +94,7 @@ private:
   std::string plug_global_frame_;
   std::vector<std::string> plug_ignore_models_;
   hunav_msgs::msg::Agents agents_;
+  rclcpp::Service<hunav_msgs::srv::GetAgents>::SharedPtr agents_srv_;
 };
 } // namespace hunav
 

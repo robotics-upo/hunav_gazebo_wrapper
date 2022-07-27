@@ -39,12 +39,13 @@ link_directories(
 add_library(HuNavPlugin SHARED src/HuNavPlugin.cpp)
 target_include_directories(HuNavPlugin PUBLIC include) #${ignition-common3_INCLUDE_DIRS}
 ament_target_dependencies(HuNavPlugin 
-  "rclcpp" 
-  "gazebo" 
-  "gazebo_ros" 
-  "hunav_msgs" 
-  "tf2" 
-  "tf2_geometry_msgs"
+  rclcpp 
+  gazebo 
+  gazebo_ros 
+  hunav_msgs 
+  geometry_msgs
+  tf2 
+  tf2_geometry_msgs
 ) 
 ament_export_libraries(HuNavPlugin)
 target_link_libraries(HuNavPlugin ${GAZEBO_LIBRARIES}) #${ignition-common3_LIBRARIES}

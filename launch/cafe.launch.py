@@ -13,6 +13,11 @@ from launch_ros.substitutions import FindPackageShare
 
 def generate_launch_description():
 
+    use_nvidia_gpu = [
+        '__NV_PRIME_RENDER_OFFLOAD=1 ',
+        '__GLX_VENDOR_LIBRARY_NAME=nvidia ',
+    ]
+
     my_gazebo_models = PathJoinSubstitution([
         FindPackageShare('hunav_gazebo_wrapper'),
         'models',
@@ -56,15 +61,17 @@ def generate_launch_description():
     world_path = PathJoinSubstitution([
         FindPackageShare('hunav_gazebo_wrapper'),
         'worlds',
-        'cafe2.world' #generatedWorld.world'
+        'cafe2.world' #'generatedWorld.world'
     ])
 
     # Crear world_path2 
     gzserver_cmd = [
+        use_nvidia_gpu,
         'gzserver ',
         '--pause ',
         # Pass through arguments to gzserver
-        LaunchConfiguration('world'), world_path, 
+        #LaunchConfiguration('world'), 
+        world_path, 
         _boolean_command('verbose'), '',
         '-s ', 'libgazebo_ros_init.so',
         '-s ', 'libgazebo_ros_factory.so',
@@ -74,6 +81,7 @@ def generate_launch_description():
     ]
 
     gzclient_cmd = [
+        use_nvidia_gpu,
         'gzclient',
         _boolean_command('verbose'), ' ',
     ]
