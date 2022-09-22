@@ -75,3 +75,8 @@ ros2 launch hunav_rviz2_panel hunav_rviz2_launch.py
 ```
 
 * If you want to use your robot instead, you can check the launch file *pmb2_cafe.launch.py*, and replace the pmb2 robot by yours, and spawn it in Gazebo.
+
+
+## TODOs
+
+* Augment the number and quality of the 3d models that represent the hunav_agents
