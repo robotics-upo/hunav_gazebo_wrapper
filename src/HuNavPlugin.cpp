@@ -284,7 +284,7 @@ void HuNavPluginPrivate::InitializeAgents() {
       return;
     }
     RCLCPP_WARN(rosnode->get_logger(),
-                "service not available, waiting again...");
+                "service /get_agents not available, waiting again...");
   }
   // Call the service
   auto result = rosSrvGetAgentsClient->async_send_request(request);
@@ -531,7 +531,7 @@ void HuNavPluginPrivate::UpdateGazeboPedestrians(
     double currAngle = actorPose.Rot().Yaw();
     double diff = normalizeAngle(yaw - currAngle);
     if (std::fabs(diff) > IGN_DTOR(10)) {
-      yaw = normalizeAngle(currAngle + (diff * 0.01)); // 0.005
+      yaw = normalizeAngle(currAngle + (diff * 0.1)); // 0.01, 0.005
     }
 
     // auto entity_pos =
@@ -600,13 +600,13 @@ void HuNavPluginPrivate::UpdateGazeboPedestrians(
           a.behavior == hunav_msgs::msg::Agent::BEH_SURPRISED ||
           a.behavior == hunav_msgs::msg::Agent::BEH_THREATENING) {
 
-        animationFactor = 1.5;
+        animationFactor = 1.0; // 1.5;
       } else if (a.behavior == hunav_msgs::msg::Agent::BEH_IMPASSIVE) {
-        animationFactor = 1.5;
+        animationFactor = 1.0; // 1.5;
       } else if (a.behavior == hunav_msgs::msg::Agent::BEH_SCARED) {
-        animationFactor = 2.5;
+        animationFactor = 1.5; // 2.5;
       } else if (a.behavior == hunav_msgs::msg::Agent::BEH_CURIOUS) {
-        animationFactor = 1.5;
+        animationFactor = 1.0; // 1.5;
       } else {
         animationFactor = 1.0;
       }
@@ -622,7 +622,7 @@ void HuNavPluginPrivate::UpdateGazeboPedestrians(
       } else if (a.behavior == hunav_msgs::msg::Agent::BEH_SCARED) {
         animationFactor = 1.5;
       } else if (a.behavior == hunav_msgs::msg::Agent::BEH_CURIOUS) {
-        animationFactor = 4.0;
+        animationFactor = 2.0; // 4.0;
       } else {
         animationFactor = 1.0;
       }
@@ -709,7 +709,7 @@ void HuNavPluginPrivate::OnUpdate(const gazebo::common::UpdateInfo &_info) {
       return;
     }
     RCLCPP_WARN(rosnode->get_logger(),
-                "service not available, waiting again...");
+                "Service /compute_agents not available, waiting again...");
   }
   // Call the service
   auto result = rosSrvClient->async_send_request(request);
@@ -730,7 +730,7 @@ void HuNavPluginPrivate::OnUpdate(const gazebo::common::UpdateInfo &_info) {
 
   } else {
     RCLCPP_ERROR(rosnode->get_logger(),
-                 "Failed to call service compute_agents");
+                 "Failed to call service /compute_agents");
   }
   lastUpdate = _info.simTime;
 }
