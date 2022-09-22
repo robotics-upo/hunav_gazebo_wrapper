@@ -74,4 +74,4 @@ ros2 launch hunav_gazebo_wrapper example_cafe.launch.py
 ros2 launch hunav_rviz2_panel hunav_rviz2_launch.py
 ```
 
-* If you want to use your robot instead, you can check the launch file *pmb2_cafe.launch.py*, and replace the pmb2 robot by yours and spawning it in Gazebo.
+* If you want to use your robot instead, you can check the launch file *pmb2_cafe.launch.py*, and replace the pmb2 robot by yours, and spawn it in Gazebo.
