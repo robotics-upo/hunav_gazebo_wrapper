@@ -70,7 +70,7 @@ ros2 launch hunav_gazebo_wrapper example_cafe.launch.py
   ```[your_workspace]/src/hunav_sim/hunav_agent_manager/config/agents.yaml```
      
 * If you prefer to create the agents' configuration file by using the GUI, you can do it by launching:
-  ```sh
+```sh
 ros2 launch hunav_rviz2_panel hunav_rviz2_launch.py
 ```
 
