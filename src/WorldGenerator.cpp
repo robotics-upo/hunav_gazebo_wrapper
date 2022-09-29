@@ -78,7 +78,7 @@ void WorldGenerator::readPluginParams() {
 
   // Plugin parameters
   base_world_ = this->declare_parameter<std::string>(
-      "base_world", std::string("empty_cafe.world"));
+      "base_world", std::string("bookstore.world"));
   plug_use_gazebo_obs_ = this->declare_parameter<bool>("use_gazebo_obs", false);
   plug_update_rate_ = this->declare_parameter<double>("update_rate", 100.0);
   plug_robot_name_ =
@@ -236,12 +236,14 @@ bool WorldGenerator::processXML() {
   tinyxml2::XMLElement *physics = doc.FirstChildElement("sdf")
                                       ->FirstChildElement("world")
                                       ->FirstChildElement("physics");
+
   // if does not exist, we add it
   if (physics == nullptr) {
     // we add it
     // Insert plugin in the XML
     doc.FirstChildElement("sdf")->FirstChildElement("world")->InsertFirstChild(
         physics_tag);
+
     tinyxml2::XMLElement *phy = doc.FirstChildElement("sdf")
                                     ->FirstChildElement("world")
                                     ->FirstChildElement("physics");
@@ -273,6 +275,7 @@ bool WorldGenerator::processXML() {
       rtur = phy->FirstChildElement("real_time_update_rate");
     }
     rtur->SetText(100);
+
   }
 
   // CREATE PLUGIN TAG
@@ -397,7 +400,7 @@ bool WorldGenerator::processXML() {
       first = false;
       tinyxml2::XMLElement *pInclude = doc.FirstChildElement("sdf")
                                            ->FirstChildElement("world")
-                                           ->LastChildElement("include");
+                                           ->LastChildElement("physics");
       doc.FirstChildElement("sdf")
           ->FirstChildElement("world")
           ->InsertAfterChild(pInclude, pNewActor);
