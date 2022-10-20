@@ -196,9 +196,9 @@ bool WorldGenerator::processXML() {
   std::string skin_filename[] = {"walk.dae", "walk-green.dae", "walk-blue.dae",
                                  "walk-red.dae", "stand.dae"};
   std::string animation_filename[] = {
-      "07_01-walk.bvh",         "142_04-walk_cool.bvh",
-      "141_20-waiting.bvh",     "142_01-walk_childist.bvh",
-      "120_19-walk_slow.bvh",   "142_08-walk_happy.bvh",
+      "07_01-walk.bvh",         "69_02_walk_forward.bvh",
+      "137_28-normal_wait.bvh",     "142_01-walk_childist.bvh",
+      "07_04-slow_walk.bvh",   "142_08-walk_happy.bvh",
       "142_17-walk_scared.bvh", "17_01-walk_with_anger.bvh"};
 
   // load the base world file
