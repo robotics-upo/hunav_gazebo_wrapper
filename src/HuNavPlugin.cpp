@@ -363,39 +363,47 @@ void HuNavPluginPrivate::HandleObstacles() {
 
         ignition::math::Vector3d actorPos = agent->WorldPose().Pos();
         ignition::math::Vector3d obsPos = modelObstacle->WorldPose().Pos();
-        std::tuple<bool, double, ignition::math::Vector3d> intersect =
-            modelObstacle->BoundingBox().Intersect(obsPos, actorPos, 0.05, 8.0);
 
-        if (std::get<0>(intersect) == true) {
+        // std::tuple<bool, double, ignition::math::Vector3d> intersect =
+        //     modelObstacle->BoundingBox().Intersect(obsPos, actorPos,
+        //     0.05, 8.0);
+        ignition::math::Line3d act_obs_line(actorPos, obsPos);
+        std::tuple<bool, double, ignition::math::Vector3d> obs_intersect =
+            modelObstacle->BoundingBox().Intersect(act_obs_line);
 
-          // ignition::math::Vector3d = model->BoundingBox().Center();
-          // double approximated_radius =
-          // std::max(model->BoundingBox().XLength(),model->BoundingBox().YLength());
+        ignition::math::Vector3d intersecPos;
+        double dist = -1;
+        if (std::get<0>(obs_intersect) == true) {
+          intersecPos = std::get<2>(obs_intersect);
+          dist = std::get<1>(obs_intersect);
+        }
 
-          // ignition::math::Vector3d offset1 = modelPos - actorPos;
-          // double modelDist1 = offset1.Length();
-          // double dist1 = actorPos.Distance(modelPos);
+        ignition::math::Vector3d goalPos(pedestrians[i].goals[0].position.x,
+                                         pedestrians[i].goals[0].position.y,
+                                         actorPos.Z());
+        ignition::math::Line3d act_goal_line(actorPos, goalPos);
+        std::tuple<bool, double, ignition::math::Vector3d> goal_intersect =
+            modelObstacle->BoundingBox().Intersect(act_goal_line);
+        if (std::get<0>(goal_intersect) == true) {
+          if (dist > 0.0 && std::get<1>(goal_intersect) < dist) {
+            intersecPos = std::get<2>(goal_intersect);
+            dist = std::get<1>(goal_intersect);
+          }
+        }
 
-          ignition::math::Vector3d offset = std::get<2>(intersect) - actorPos;
+        if (dist > 0) {
+          ignition::math::Vector3d offset = intersecPos - actorPos;
           double modelDist = offset.Length(); //-approximated_radius;
           // double dist2 = actorPos.Distance(std::get<2>(intersect));
 
           if (modelDist < minDist) {
             minDist = modelDist;
             // closest_obs = offset;
-            closest_obstacle = std::get<2>(intersect);
+            closest_obstacle = intersecPos;
           }
         }
       }
     }
-
-    // printf("Actor %s x: %.2f y: %.2f\n", this->actor->GetName().c_str(),
-    //        this->actor->WorldPose().Pos().X(),
-    //        this->actor->WorldPose().Pos().Y());
-    // printf("Model offset x: %.2f y: %.2f\n", closest_obs.X(),
-    // closest_obs.Y());
-    // printf("Model intersec x: %.2f y: %.2f\n\n", closest_obs2.X(),
-    //        closest_obs2.Y());
     if (minDist <= 10.0) {
       geometry_msgs::msg::Point p;
       p.x = closest_obstacle.X();
@@ -509,16 +517,8 @@ void HuNavPluginPrivate::UpdateGazeboPedestrians(
     const gazebo::common::UpdateInfo &_info,
     const hunav_msgs::msg::Agents &_agents) {
   // update the Gazebo actors
-  // for (unsigned int i = 0; i < this->pedestrians.size(); i++)
   for (auto a : _agents.agents) {
 
-    // RCLCPP_INFO(rosnode->get_logger(),
-    //             "UpdateGazeboPeds ped received... actor id:%i, pose x:%.2f,
-    //             " "y:%.2f, th:%.2f, lv: %.3f, av:%.3f", a.id,
-    //             a.position.position.x, a.position.position.y, a.yaw,
-    //             a.linear_vel, a.angular_vel);
-
-    // auto entity = world->EntityByName(a.name);
     // auto model =
     // boost::dynamic_pointer_cast<gazebo::physics::Model>(entity);
     gazebo::physics::ModelPtr model = world->ModelByName(a.name);
@@ -532,15 +532,6 @@ void HuNavPluginPrivate::UpdateGazeboPedestrians(
     if (std::fabs(diff) > IGN_DTOR(10)) {
       yaw = normalizeAngle(currAngle + (diff * 0.1)); // 0.01, 0.005
     }
-
-    // auto entity_pos =
-    // Convert<ignition::math::Vector3d>(a.position.position);
-    // entity_pos.Z(1.2138);
-    // auto entity_rot = ignition::math::Quaterniond(1.5707, 0, yaw);
-    // // Convert<ignition::math::Quaterniond>(a.position.orientation);
-    // // Eliminate invalid rotation (0, 0, 0, 0)
-    // entity_rot.Normalize();
-    // ignition::math::Pose3d entity_pose(entity_pos, entity_rot);
 
     auto entity_lin_vel =
         gazebo_ros::Convert<ignition::math::Vector3d>(a.velocity.linear);
@@ -582,11 +573,18 @@ void HuNavPluginPrivate::UpdateGazeboPedestrians(
 
     int index = -1;
     for (unsigned int i = 0; i < pedestrians.size(); i++) {
-      if (a.id == pedestrians[i].id &&
-          a.behavior_state != this->pedestrians[i].behavior_state) {
-        this->pedestrians[i].behavior_state = a.behavior_state;
-        index = i;
-        break;
+
+      if (a.id == pedestrians[i].id) {
+        // update pedestrians' goals
+        this->pedestrians[i].goals.clear();
+        this->pedestrians[i].goals = a.goals;
+
+        // update behavior state
+        if (a.behavior_state != this->pedestrians[i].behavior_state) {
+          this->pedestrians[i].behavior_state = a.behavior_state;
+          index = i;
+          break;
+        }
       }
     }
 
