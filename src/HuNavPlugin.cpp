@@ -378,7 +378,7 @@ void HuNavPluginPrivate::HandleObstacles() {
           dist = std::get<1>(obs_intersect);
         }
 
-        ignition::math::Vector3d goalPos(pedestrians[i].goals[0].position.x,
+        /*ignition::math::Vector3d goalPos(pedestrians[i].goals[0].position.x,
                                          pedestrians[i].goals[0].position.y,
                                          actorPos.Z());
         ignition::math::Line3d act_goal_line(actorPos, goalPos);
@@ -389,7 +389,7 @@ void HuNavPluginPrivate::HandleObstacles() {
             intersecPos = std::get<2>(goal_intersect);
             dist = std::get<1>(goal_intersect);
           }
-        }
+        }*/
 
         if (dist > 0) {
           ignition::math::Vector3d offset = intersecPos - actorPos;
