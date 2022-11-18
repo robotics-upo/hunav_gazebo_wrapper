@@ -263,7 +263,7 @@ def generate_launch_description():
         description='Name of the global frame in which the position of the agents are provided'
     )
     declare_ignore_models = DeclareLaunchArgument(
-        'ignore_models', default_value='ground_plane cafe FloorB_01_001',
+        'ignore_models', default_value='ground_plane',
         description='list of Gazebo models that the agents should ignore as obstacles as the ground_plane. Indicate the models with a blank space between them'
     )
     declare_arg_verbose = DeclareLaunchArgument(
@@ -278,7 +278,7 @@ def generate_launch_description():
             description='The robot initial position in the X axis of the world')
     declare_arg_py = DeclareLaunchArgument('gzpose_y', default_value='0.0',
             description='The robot initial position in the Y axis of the world')
-    declare_arg_pz = DeclareLaunchArgument('gzpose_z', default_value='0.30',
+    declare_arg_pz = DeclareLaunchArgument('gzpose_z', default_value='0.20',
             description='The robot initial position in the Z axis of the world')
     declare_arg_pR = DeclareLaunchArgument('gzpose_R', default_value='0.0',
             description='The robot initial roll angle in the world')
@@ -286,7 +286,7 @@ def generate_launch_description():
             description='The robot initial pitch angle in the world')
     declare_arg_pY = DeclareLaunchArgument('gzpose_Y', default_value='0.0',
             description='The robot initial yaw angle in the world')
-    declare_arg_laser = DeclareLaunchArgument('laser_model', default_value='sick-571',
+    declare_arg_laser = DeclareLaunchArgument('laser_model', default_value='sick-571-gpu',
             description='the laser model to be used')
     declare_arg_rgbd = DeclareLaunchArgument('rgbd_sensors', default_value='false',
             description='whether to use rgbd cameras or not')
