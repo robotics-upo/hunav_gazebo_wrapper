@@ -545,8 +545,68 @@ void HuNavPluginPrivate::UpdateGazeboPedestrians(
     actorPose.Pos().X(a.position.position.x);
     actorPose.Pos().Y(a.position.position.y);
     actorPose.Rot() = ignition::math::Quaterniond(1.5707, 0, yaw);
-    actorPose.Pos().Z(1.2138);
 
+    // The human agents do not have collisions.
+    // When the simulation starts, they move to zero height
+    // (in the middle of their bodies approximately)
+    // So, we need to add an extra height (Z) according to the height
+    // of each model in order to put them on the floor
+    // (the floor must be at zero height) 
+
+    for(auto pedestrian : pedestrians){
+      if(a.id == pedestrian.id){
+        switch (pedestrian.skin)
+        {
+          // Elegant man
+          case 0:
+            actorPose.Pos().Z(0.96);
+            break;
+          // Casual man
+          case 1:
+            actorPose.Pos().Z(0.97);
+            break;
+          // Elegant woman
+          case 2:
+            actorPose.Pos().Z(0.93);
+            break;
+          // Regular man
+          case 3:
+            actorPose.Pos().Z(0.93);
+            break;
+          // Worker man
+          case 4:
+            actorPose.Pos().Z(0.97);
+            break;
+          // Balds
+          case 5:
+            actorPose.Pos().Z(1.05);
+            break;
+          case 6:
+            actorPose.Pos().Z(1.05);
+            break;
+          case 7:
+            actorPose.Pos().Z(1.05);
+            break;
+          case 8:
+            actorPose.Pos().Z(1.05);
+            break;
+          default:
+            break;
+        }
+      }
+    }
+    
+    // std::string entityname;
+    // double distBelow;
+
+    //model->GetNearestEntityBelow(distBelow, entityname);
+    //model->PlaceOnNearestEntityBelow();
+
+    //ignition::math::Vector3d corner = model->BoundingBox().Size();
+    //RCLCPP_INFO(rosnode->get_logger(), "AGENT %s Length--> %.2f X--> %.2f Y--> %.2f Z--> %.2f", a.name.c_str(), entity->BoundingBox().Size().Length(), 
+    //entity->BoundingBox().Size().X(), entity->BoundingBox().Size().Y(), entity->BoundingBox().Size().Z());
+    // actorPose.Pos().Z(zsize.Z());
+    
     // Distance traveled is used to coordinate motion with the walking
     // animation
     double distanceTraveled =
