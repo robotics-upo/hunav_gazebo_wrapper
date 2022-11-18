@@ -193,8 +193,9 @@ void WorldGenerator::getAgentsService(
 bool WorldGenerator::processXML() {
   // std::cout << base_world_ << std::endl;
 
-  std::string skin_filename[] = {"walk.dae", "walk-green.dae", "walk-blue.dae",
-                                 "walk-red.dae", "stand.dae"};
+  std::string skin_filename[] = {"elegant_man.dae", "casual_man.dae", "elegant_woman.dae",
+                                 "regular_man.dae", "worker_man.dae", "walk.dae", "walk-green.dae",
+                                 "walk-blue.dae", "walk-red.dae", "stand.dae"};
   std::string animation_filename[] = {
       "07_01-walk.bvh",         "69_02_walk_forward.bvh",
       "137_28-normal_wait.bvh",     "142_01-walk_childist.bvh",
