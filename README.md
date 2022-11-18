@@ -3,8 +3,8 @@
 A ROS2 wrapper to use the [HuNavSim](https://github.com/robotics-upo/hunav_sim) with the Gazebo Simulator (tested with ROS Foxy and Gazebo 11). 
 Different scenarios (a cafe, a warehouse, and a house) are included. A set of different human models are available too.
 
+![](https://github.com/robotics-upo/hunav_gazebo_wrapper/blob/master/media/images/threateningscared.png)
 
-![](https://github.com/robotics-upo/hunav_gazebo_wrapper/blob/master/media/images/hunav_gazebo_wrapper.png)
 
 ## Wrapper functioning
 
@@ -14,7 +14,7 @@ The wrapper is based on two components:
 
 * The *HuNavPlugin* is a Gazebo plugin in charge of interacting with the HuNavSim to control the human movements. This interaction is performed through ROS2 services. 
 
-![](https://github.com/robotics-upo/hunav_gazebo_wrapper/blob/master/media/images/threateningscared.png)
+![](https://github.com/robotics-upo/hunav_gazebo_wrapper/blob/master/media/images/hunav_gazebo_wrapper.png)
 
 ## Generator parameters
 
