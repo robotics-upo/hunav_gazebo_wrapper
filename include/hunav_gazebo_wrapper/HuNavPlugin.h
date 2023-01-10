@@ -43,6 +43,7 @@
 #include "hunav_msgs/msg/agents.hpp"
 #include "hunav_msgs/srv/compute_agents.hpp"
 #include "hunav_msgs/srv/get_agents.hpp"
+#include "hunav_msgs/srv/reset_agents.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include <tf2/LinearMath/Matrix3x3.h>
 #include <tf2/LinearMath/Quaternion.h>
@@ -66,6 +67,8 @@ public:
   /// \param[in] _model Pointer to the parent model.
   /// \param[in] _sdf Pointer to the plugin's SDF elements.
   void Load(gazebo::physics::WorldPtr _world, sdf::ElementPtr _sdf) override;
+
+  void Reset() override;
 
 private:
   std::unique_ptr<HuNavPluginPrivate> hnav_;

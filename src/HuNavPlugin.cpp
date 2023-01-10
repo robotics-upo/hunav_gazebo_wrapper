@@ -76,12 +76,17 @@ public:
   /// \brief ros service to get the initial agents setup
   rclcpp::Client<hunav_msgs::srv::GetAgents>::SharedPtr rosSrvGetAgentsClient;
 
+  /// \brief ros service to reset the agents in the hunav_manager
+  rclcpp::Client<hunav_msgs::srv::ResetAgents>::SharedPtr rosSrvResetClient;
+
   /// \brief the robot as a agent msg
   hunav_msgs::msg::Agent robotAgent;
+  hunav_msgs::msg::Agent init_robotAgent;
 
   /// \brief vector of pedestrians detected.
   std::vector<hunav_msgs::msg::Agent> pedestrians;
-  // std::vector<ped> pedestrians;
+  // init state of agents
+  hunav_msgs::msg::Agents init_pedestrians;
 
   /// \brief Pointer to the parent actor.
   gazebo::physics::ModelPtr robotModel;
@@ -101,6 +106,7 @@ public:
   rclcpp::Time rostime;
   double dt;
   double update_rate_secs;
+  bool reset;
 
   std::string robotName;
   std::string globalFrame;
@@ -147,7 +153,7 @@ void HuNavPlugin::Load(gazebo::physics::WorldPtr _world, sdf::ElementPtr _sdf) {
       modelElem = modelElem->GetNextElement("model");
     }
   }
-
+  hnav_->reset = false;
   hnav_->rostime = hnav_->rosnode->get_clock()->now();
   hnav_->dt = 0;
   // Update rate
@@ -166,6 +172,10 @@ void HuNavPlugin::Load(gazebo::physics::WorldPtr _world, sdf::ElementPtr _sdf) {
 
   hnav_->rosSrvGetAgentsClient =
       hnav_->rosnode->create_client<hunav_msgs::srv::GetAgents>("get_agents");
+
+  hnav_->rosSrvResetClient =
+      hnav_->rosnode->create_client<hunav_msgs::srv::ResetAgents>(
+          "reset_agents");
 
   hnav_->connection = gazebo::event::Events::ConnectWorldUpdateBegin(std::bind(
       &HuNavPluginPrivate::OnUpdate, hnav_.get(), std::placeholders::_1));
@@ -210,6 +220,8 @@ void HuNavPlugin::Load(gazebo::physics::WorldPtr _world, sdf::ElementPtr _sdf) {
     /// public: void SetCustomTrajectory(TrajectoryInfoPtr &_trajInfo);
     actor->SetCustomTrajectory(trajectoryInfo);
   }
+
+  // Reset();
 }
 
 // /////////////////////////////////////////////////
@@ -230,6 +242,56 @@ void HuNavPlugin::Load(gazebo::physics::WorldPtr _world, sdf::ElementPtr _sdf) {
 //   //   this->actor->SetCustomTrajectory(this->trajectoryInfo);
 //   // }
 // }
+
+void HuNavPlugin::Reset() {
+
+  RCLCPP_INFO(hnav_->rosnode->get_logger(),
+              "\n\n---------World reset---------\n");
+
+  hnav_->reset = true;
+  hnav_->lastUpdate = 0; // hnav_->world->SimTime();
+  hnav_->rostime = hnav_->rosnode->get_clock()->now();
+
+  for (size_t i = 0; i < hnav_->init_pedestrians.agents.size(); ++i) {
+
+    gazebo::physics::ModelPtr model =
+        hnav_->world->ModelByName(hnav_->init_pedestrians.agents[i].name);
+    gazebo::physics::ActorPtr actor =
+        boost::dynamic_pointer_cast<gazebo::physics::Actor>(model);
+
+    // // Gazebo models positions----------------
+    // ignition::math::Pose3d actorPose = actor->WorldPose();
+    // double yaw =
+    //     hnav_->normalizeAngle(hnav_->init_pedestrians.agents[i].yaw +
+    //     M_PI_2);
+    // auto entity_lin_vel = gazebo_ros::Convert<ignition::math::Vector3d>(
+    //     hnav_->init_pedestrians.agents[i].velocity.linear);
+    // auto entity_ang_vel = gazebo_ros::Convert<ignition::math::Vector3d>(
+    //     hnav_->init_pedestrians.agents[i].velocity.angular);
+    // actorPose.Pos().X(hnav_->init_pedestrians.agents[i].position.position.x);
+    // actorPose.Pos().Y(hnav_->init_pedestrians.agents[i].position.position.y);
+    // actorPose.Rot() = ignition::math::Quaterniond(1.5707, 0, yaw);
+    // model->SetWorldPose(actorPose);
+    // model->ResetPhysicsStates();
+    // //----------------------------------------
+
+    //---Reset trajectories-----------------------------
+    gazebo::physics::TrajectoryInfoPtr trajectoryInfo;
+    trajectoryInfo.reset(new gazebo::physics::TrajectoryInfo());
+    // trajectoryInfo->id = 0;
+    auto skelAnims = actor->SkeletonAnimations();
+    if (!skelAnims.empty()) {
+      trajectoryInfo->type = "no_active";
+    } else {
+      RCLCPP_INFO(hnav_->rosnode->get_logger(), "Animation default type: %s",
+                  DEF_WALKING_ANIMATION);
+      trajectoryInfo->type = DEF_WALKING_ANIMATION;
+    }
+    trajectoryInfo->duration = 1.0;
+
+    actor->SetCustomTrajectory(trajectoryInfo);
+  }
+}
 
 bool HuNavPluginPrivate::InitializeRobot() {
   RCLCPP_INFO(rosnode->get_logger(), "Initializing robot...");
@@ -262,6 +324,7 @@ bool HuNavPluginPrivate::InitializeRobot() {
     ignition::math::Vector3d angvel = robotModel->WorldAngularVel();
     robotAgent.velocity.angular.z = angvel.Z();
     robotAgent.angular_vel = angvel.Z();
+    init_robotAgent = robotAgent;
     return true;
   }
 }
@@ -276,7 +339,7 @@ void HuNavPluginPrivate::InitializeAgents() {
   request->empty = 0;
 
   // Wait for the service to be available
-  while (!rosSrvGetAgentsClient->wait_for_service(1s)) {
+  while (!rosSrvGetAgentsClient->wait_for_service(5s)) {
     if (!rclcpp::ok()) {
       RCLCPP_ERROR(rosnode->get_logger(),
                    "Interrupted while waiting for the service. Exiting.");
@@ -290,8 +353,9 @@ void HuNavPluginPrivate::InitializeAgents() {
   std::chrono::duration<int, std::milli> ms(200);
   if (result.wait_for(ms) == std::future_status::ready) {
 
-    // Initialize the Gazebo actors
+    // Initialize the actors
     const hunav_msgs::msg::Agents &agents = result.get()->agents;
+    init_pedestrians = result.get()->agents;
     pedestrians.clear();
 
     for (auto agent : agents.agents) {
@@ -304,11 +368,27 @@ void HuNavPluginPrivate::InitializeAgents() {
                      agent.name.c_str());
         return;
       }
-      ignition::math::Vector3d pos = model->WorldPose().Pos();
 
+      // ---- update Gazebo models ---
+      gazebo::physics::ActorPtr actor =
+          boost::dynamic_pointer_cast<gazebo::physics::Actor>(model);
+
+      ignition::math::Pose3d actorPose = actor->WorldPose();
+      double yaw = normalizeAngle(agent.yaw + M_PI_2);
+      auto entity_lin_vel =
+          gazebo_ros::Convert<ignition::math::Vector3d>(agent.velocity.linear);
+      auto entity_ang_vel =
+          gazebo_ros::Convert<ignition::math::Vector3d>(agent.velocity.angular);
+      actorPose.Pos().X(agent.position.position.x);
+      actorPose.Pos().Y(agent.position.position.y);
+      actorPose.Rot() = ignition::math::Quaterniond(1.5707, 0, yaw);
+      model->SetWorldPose(actorPose);
+      //-----------------------------------
+
+      ignition::math::Vector3d pos = model->WorldPose().Pos();
       // The front (x axis) of the actors in Gazebo is
       // looking to the person left, we rotate it
-      double yaw = normalizeAngle(model->WorldPose().Rot().Yaw() - M_PI_2);
+      yaw = normalizeAngle(model->WorldPose().Rot().Yaw() - M_PI_2);
       ag.position.position.x = pos.X();
       ag.position.position.y = pos.Y();
       tf2::Quaternion myQuaternion;
@@ -316,6 +396,7 @@ void HuNavPluginPrivate::InitializeAgents() {
       ag.position.orientation = tf2::toMsg(myQuaternion);
       ag.yaw = yaw;
       ignition::math::Vector3d linvel = model->WorldLinearVel();
+      ag.desired_velocity = agent.desired_velocity;
       ag.velocity.linear.x = linvel.X();
       ag.velocity.linear.y = linvel.Y();
       ag.linear_vel = linvel.Length();
@@ -326,9 +407,9 @@ void HuNavPluginPrivate::InitializeAgents() {
       pedestrians.push_back(ag);
       RCLCPP_INFO(rosnode->get_logger(),
                   "Adding agent: %s, type: %i, id:%i, beh:%i, x:%.2f, "
-                  "y:%.2f, th:%.2f",
+                  "y:%.2f, th:%.2f, dvel:%.2f",
                   ag.name.c_str(), ag.type, ag.id, ag.behavior, pos.X(),
-                  pos.Y(), yaw);
+                  pos.Y(), yaw, pedestrians.back().desired_velocity);
     }
 
   } else {
@@ -468,16 +549,30 @@ bool HuNavPluginPrivate::GetPedestrians() {
 
     // I do not know the reason, but Gazebo WorldVels are throwing zero
     // velocities, so I compute them by myself
-    double anvel =
-        normalizeAngle(yaw - pedestrians[i].yaw) / (update_rate_secs);
     double xi = pedestrians[i].position.position.x;
     double yi = pedestrians[i].position.position.y;
     double xf = pos.X();
     double yf = pos.Y();
     double dist = sqrt((xf - xi) * (xf - xi) + (yf - yi) * (yf - yi));
     double linearVelocity = dist / (update_rate_secs);
+    double anvel =
+        normalizeAngle(yaw - pedestrians[i].yaw) / (update_rate_secs);
     double vx = (xf - xi) / (update_rate_secs);
     double vy = (yf - yi) / (update_rate_secs);
+
+    if (reset) {
+      linearVelocity = 0.0;
+      vx = 0.0;
+      vy = 0.0;
+      anvel = 0.0;
+    } else if (linearVelocity > pedestrians[i].desired_velocity) {
+      linearVelocity = pedestrians[i].desired_velocity;
+      double maxd = linearVelocity * update_rate_secs;
+      if (fabs(xf - xi) > maxd)
+        vx = ((xf - xi) / fabs(xf - xi)) * maxd / update_rate_secs;
+      if (fabs(yf - yi) > maxd)
+        vy = ((yf - yi) / fabs(yf - yi)) * maxd / update_rate_secs;
+    }
     pedestrians[i].velocity.linear.x = vx;
     pedestrians[i].velocity.linear.y = vy;
     pedestrians[i].linear_vel = linearVelocity;
@@ -485,12 +580,22 @@ bool HuNavPluginPrivate::GetPedestrians() {
     pedestrians[i].angular_vel = anvel;
 
     // Pose
-    pedestrians[i].position.position.x = pos.X();
-    pedestrians[i].position.position.y = pos.Y();
+    pedestrians[i].position.position.x = xf; // pos.X();
+    pedestrians[i].position.position.y = yf; // pos.Y();
     tf2::Quaternion myQuaternion;
     myQuaternion.setRPY(0, 0, yaw);
     pedestrians[i].position.orientation = tf2::toMsg(myQuaternion);
     pedestrians[i].yaw = yaw;
+
+    // RCLCPP_INFO(rosnode->get_logger(),
+    //             "getPedestrians. Actor %s pose x: %.2f, y: %.2f, vx:%.2f, "
+    //             "vy:%.2f, lv: %.2f, dvel: %.2f",
+    //             pedestrians[i].name.c_str(),
+    //             pedestrians[i].position.position.x,
+    //             pedestrians[i].position.position.y,
+    //             pedestrians[i].velocity.linear.x,
+    //             pedestrians[i].velocity.linear.y, pedestrians[i].linear_vel,
+    //             pedestrians[i].desired_velocity);
 
     // if (pedestrians[i].name == "actor2") { //// (dt * step_count),
     //   RCLCPP_INFO(rosnode->get_logger(),
@@ -503,12 +608,13 @@ bool HuNavPluginPrivate::GetPedestrians() {
     // }
 
     // RCLCPP_INFO(rosnode->get_logger(),
-    //             "Getting agent: %s from simulator, type: %i, id:%i, x:%.2f,
-    //             " "y:%.2f, th:%.2f, lv:%.3f, av:%.3f",
+    //             "GetPedestrians. Agent: %s from simulator, type: %i, id:%i,
+    //             " "x:%.2f, y: % .2f, th: % .2f, lv: % .3f, av: % .3f ",
     //             model->GetName().c_str(), model->GetType(), model->GetId(),
     //             pos.X(), pos.Y(), yaw, pedestrians[i].linear_vel,
     //             pedestrians[i].angular_vel);
   }
+  reset = false;
   return true;
 }
 
@@ -551,64 +657,51 @@ void HuNavPluginPrivate::UpdateGazeboPedestrians(
     // (in the middle of their bodies approximately)
     // So, we need to add an extra height (Z) according to the height
     // of each model in order to put them on the floor
-    // (the floor must be at zero height) 
-
-    for(auto pedestrian : pedestrians){
-      if(a.id == pedestrian.id){
-        switch (pedestrian.skin)
-        {
-          // Elegant man
-          case 0:
-            actorPose.Pos().Z(0.96);
-            break;
-          // Casual man
-          case 1:
-            actorPose.Pos().Z(0.97);
-            break;
-          // Elegant woman
-          case 2:
-            actorPose.Pos().Z(0.93);
-            break;
-          // Regular man
-          case 3:
-            actorPose.Pos().Z(0.93);
-            break;
-          // Worker man
-          case 4:
-            actorPose.Pos().Z(0.97);
-            break;
-          // Balds
-          case 5:
-            actorPose.Pos().Z(1.05);
-            break;
-          case 6:
-            actorPose.Pos().Z(1.05);
-            break;
-          case 7:
-            actorPose.Pos().Z(1.05);
-            break;
-          case 8:
-            actorPose.Pos().Z(1.05);
-            break;
-          default:
-            break;
+    // (the floor must be at zero height)
+    for (auto pedestrian : pedestrians) {
+      if (a.id == pedestrian.id) {
+        switch (pedestrian.skin) {
+        // Elegant man
+        case 0:
+          actorPose.Pos().Z(0.96);
+          break;
+        // Casual man
+        case 1:
+          actorPose.Pos().Z(0.97);
+          break;
+        // Elegant woman
+        case 2:
+          actorPose.Pos().Z(0.93);
+          break;
+        // Regular man
+        case 3:
+          actorPose.Pos().Z(0.93);
+          break;
+        // Worker man
+        case 4:
+          actorPose.Pos().Z(0.97);
+          break;
+        // Balds
+        case 5:
+          actorPose.Pos().Z(1.05);
+          break;
+        case 6:
+          actorPose.Pos().Z(1.05);
+          break;
+        case 7:
+          actorPose.Pos().Z(1.05);
+          break;
+        case 8:
+          actorPose.Pos().Z(1.05);
+          break;
+        default:
+          break;
         }
       }
     }
-    
-    // std::string entityname;
-    // double distBelow;
 
-    //model->GetNearestEntityBelow(distBelow, entityname);
-    //model->PlaceOnNearestEntityBelow();
-
-    //ignition::math::Vector3d corner = model->BoundingBox().Size();
-    //RCLCPP_INFO(rosnode->get_logger(), "AGENT %s Length--> %.2f X--> %.2f Y--> %.2f Z--> %.2f", a.name.c_str(), entity->BoundingBox().Size().Length(), 
-    //entity->BoundingBox().Size().X(), entity->BoundingBox().Size().Y(), entity->BoundingBox().Size().Z());
-    // actorPose.Pos().Z(zsize.Z());
-    
     // Distance traveled is used to coordinate motion with the walking
-    // animation
+    // animation: newPose(actorPose) - prevPose(actor->WorldPose)
     double distanceTraveled =
         (actorPose.Pos() - actor->WorldPose().Pos()).Length();
 
@@ -635,6 +728,8 @@ void HuNavPluginPrivate::UpdateGazeboPedestrians(
     for (unsigned int i = 0; i < pedestrians.size(); i++) {
 
       if (a.id == pedestrians[i].id) {
+        // desiredVel
+        // this->pedestrians[i].desired_velocity = a.desired_velocity;
         // update pedestrians' goals
         this->pedestrians[i].goals.clear();
         this->pedestrians[i].goals = a.goals;
@@ -700,8 +795,8 @@ void HuNavPluginPrivate::UpdateGazeboPedestrians(
       } else {
         trajectoryInfo->type = "active";
         // RCLCPP_INFO(rosnode->get_logger(),
-        //            "changing behavior %i of %s to 'active'", (int)a.behavior,
-        //            actor->GetName().c_str());
+        //            "changing behavior %i of %s to 'active'",
+        //            (int)a.behavior, actor->GetName().c_str());
       }
       actor->Stop();
       actor->SetCustomTrajectory(trajectoryInfo);
@@ -720,22 +815,22 @@ void HuNavPluginPrivate::OnUpdate(const gazebo::common::UpdateInfo &_info) {
 
   // rclcpp::Time now = rosnode->get_clock()->now();
 
-  double seconds_since_last_update = (_info.simTime - lastUpdate).Double();
-  // RCLCPP_INFO(rosnode->get_logger(), "seconds since last update: %.4f",
-  //             seconds_since_last_update);
+  // double seconds_since_last_update = (_info.simTime - lastUpdate).Double();
+  // // RCLCPP_INFO(rosnode->get_logger(), "seconds since last update: %.4f",
+  // //             seconds_since_last_update);
 
-  // update_rate_secs = 0.1;
-  if (seconds_since_last_update < update_rate_secs) {
-    // get pedestrian states (fill pedestrians)
-    // GetPedestrians();
-    // hunav_msgs::msg::Agents ags;
-    // ags.agents = pedestrians;
-    // ags.header.frame_id = "world";
-    // ags.header.stamp = now;
-    // UpdateGazeboPedestrians(_info, ags);
-    RCLCPP_INFO(rosnode->get_logger(), "skipping!!!");
-    return;
-  }
+  // // update_rate_secs = 0.1;
+  // if (seconds_since_last_update < update_rate_secs) {
+  //   // get pedestrian states (fill pedestrians)
+  //   // GetPedestrians();
+  //   // hunav_msgs::msg::Agents ags;
+  //   // ags.agents = pedestrians;
+  //   // ags.header.frame_id = "world";
+  //   // ags.header.stamp = now;
+  //   // UpdateGazeboPedestrians(_info, ags);
+  //   RCLCPP_INFO(rosnode->get_logger(), "skipping!!!");
+  //   return;
+  // }
 
   // update closest obstacle (fill pedestrians obstacles)
   HandleObstacles();
@@ -749,15 +844,6 @@ void HuNavPluginPrivate::OnUpdate(const gazebo::common::UpdateInfo &_info) {
   // Fill the service request
   auto request = std::make_shared<hunav_msgs::srv::ComputeAgents::Request>();
 
-  hunav_msgs::msg::Agents agents;
-  agents.header.frame_id = globalFrame;
-  agents.header.stamp =
-      gazebo_ros::Convert<builtin_interfaces::msg::Time>(_info.simTime);
-  // agents.header.stamp = now;
-  agents.agents = pedestrians;
-  request->robot = robotAgent;
-  request->current_agents = agents;
-
   // Wait for the service to be available
   while (!rosSrvClient->wait_for_service(1s)) {
     if (!rclcpp::ok()) {
@@ -768,6 +854,16 @@ void HuNavPluginPrivate::OnUpdate(const gazebo::common::UpdateInfo &_info) {
     RCLCPP_WARN(rosnode->get_logger(),
                 "Service /compute_agents not available, waiting again...");
   }
+
+  hunav_msgs::msg::Agents agents;
+  agents.header.frame_id = globalFrame;
+  agents.header.stamp =
+      gazebo_ros::Convert<builtin_interfaces::msg::Time>(_info.simTime);
+  // agents.header.stamp = now;
+  agents.agents = pedestrians;
+  request->robot = robotAgent;
+  request->current_agents = agents;
+
   // Call the service
   auto result = rosSrvClient->async_send_request(request);
   // Wait for the result.
@@ -782,6 +878,24 @@ void HuNavPluginPrivate::OnUpdate(const gazebo::common::UpdateInfo &_info) {
   std::chrono::duration<int, std::milli> ms(200);
   if (result.wait_for(ms) == std::future_status::ready) {
     // RCLCPP_INFO(rosnode->get_logger(), "Service result received!");
+
+    // for (auto ped : pedestrians) {
+    //   for (auto a : result.get()->updated_agents.agents)
+    //     if (ped.id == a.id) {
+    //       RCLCPP_INFO(rosnode->get_logger(),
+    //                   "OnUpdate Actor %s:\npx:%.2f, py:%.2f, plv:%.2f, "
+    //                   "pvx:%.2f, pvy:%.2f, pva:%.2f\nnx:%.2f, ny:%.2f, "
+    //                   "nlv:%.2f, nvx:%.2f, nvy:%.2f, nva: %.2f ",
+    //                   ped.name.c_str(), ped.position.position.x,
+    //                   ped.position.position.y, ped.linear_vel,
+    //                   ped.velocity.linear.x, ped.velocity.linear.y,
+    //                   ped.velocity.angular.z, a.position.position.x,
+    //                   a.position.position.y, a.linear_vel,
+    //                   a.velocity.linear.x, a.velocity.linear.y,
+    //                   a.velocity.angular.z);
+    //     }
+    // }
+
     // update the Gazebo actors
     UpdateGazeboPedestrians(_info, result.get()->updated_agents);
 
