@@ -752,13 +752,13 @@ void HuNavPluginPrivate::UpdateGazeboPedestrians(
           a.behavior == hunav_msgs::msg::Agent::BEH_SURPRISED ||
           a.behavior == hunav_msgs::msg::Agent::BEH_THREATENING) {
 
-        animationFactor = 1.0; // 1.5;
+        animationFactor = 1.0;
       } else if (a.behavior == hunav_msgs::msg::Agent::BEH_IMPASSIVE) {
-        animationFactor = 1.0; // 1.5;
+        animationFactor = 1.0;
       } else if (a.behavior == hunav_msgs::msg::Agent::BEH_SCARED) {
-        animationFactor = 1.5; // 2.5;
+        animationFactor = 1.0;
       } else if (a.behavior == hunav_msgs::msg::Agent::BEH_CURIOUS) {
-        animationFactor = 1.0; // 1.5;
+        animationFactor = 1.0;
       } else {
         animationFactor = 1.0;
       }
@@ -772,9 +772,9 @@ void HuNavPluginPrivate::UpdateGazeboPedestrians(
       } else if (a.behavior == hunav_msgs::msg::Agent::BEH_THREATENING) {
         animationFactor = 1.0;
       } else if (a.behavior == hunav_msgs::msg::Agent::BEH_SCARED) {
-        animationFactor = 1.0;
+        animationFactor = 1.5;
       } else if (a.behavior == hunav_msgs::msg::Agent::BEH_CURIOUS) {
-        animationFactor = 1.0; // 4.0;
+        animationFactor = 1.0;
       } else {
         animationFactor = 1.0;
       }
