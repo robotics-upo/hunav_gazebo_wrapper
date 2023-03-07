@@ -185,20 +185,15 @@ def generate_launch_description():
     
 
     # Finally, spawn the pmb2 robot in Gazebo
-    gazebo_spawn = PathJoinSubstitution(
-        [FindPackageShare("pmb2_gazebo"),
-        "launch",
-        "pmb2_spawn.launch.py"],
-    )
 
-    spawn_robot = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource([gazebo_spawn]),
-        launch_arguments={'robot_namespace': namespace,
-                        'laser_model': scan_model, 
-                        'rgbd_sensors': use_rgbd,
-                        'gzpose_x': gz_x,
-                        'gzpose_y': gz_y,
-                        'gzpose_Y': gz_Y}.items(),
+    pmb2_gazebo_launch = PathJoinSubstitution([
+        FindPackageShare("hunav_gazebo_wrapper"),
+        "launch",
+        "pmb2_pal.launch.py"
+    ],)
+
+    pmb2_gazebo = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource([pmb2_gazebo_launch])
     )
 
     # Do not launch Gazebo until the world has been generated
@@ -299,7 +294,7 @@ def generate_launch_description():
             description='The robot initial pitch angle in the world')
     declare_arg_pY = DeclareLaunchArgument('gzpose_Y', default_value='0.0',
             description='The robot initial yaw angle in the world')
-    declare_arg_laser = DeclareLaunchArgument('laser_model', default_value='sick-571-gpu',
+    declare_arg_laser = DeclareLaunchArgument('laser_model', default_value='sick-571', # Removed sick-571-gpu cause new pmb2 does not has it
             description='the laser model to be used')
     declare_arg_rgbd = DeclareLaunchArgument('rgbd_sensors', default_value='false',
             description='whether to use rgbd cameras or not')
@@ -351,7 +346,7 @@ def generate_launch_description():
     #ld.add_action(gzclient_process)
 
     # spawn robot in Gazebo
-    ld.add_action(spawn_robot)
+    ld.add_action(pmb2_gazebo)
 
 
     return ld
