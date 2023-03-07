@@ -84,7 +84,7 @@ void WorldGenerator::readPluginParams() {
       this->declare_parameter<std::string>("robot_name", std::string("robot"));
   plug_global_frame_ = this->declare_parameter<std::string>(
       "global_frame_to_publish", std::string("map"));
-  this->declare_parameter("ignore_models");
+  this->declare_parameter(std::string("ignore_models"), rclcpp::ParameterType::PARAMETER_STRING);
   rclcpp::Parameter ig_models = this->get_parameter("ignore_models");
   std::string models = ig_models.as_string();
   RCLCPP_INFO(this->get_logger(), "Ignore_models string: %s", models.c_str());

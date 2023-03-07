@@ -355,7 +355,7 @@ void HuNavPluginPrivate::InitializeAgents() {
 
     // Initialize the actors
     const hunav_msgs::msg::Agents &agents = result.get()->agents;
-    init_pedestrians = result.get()->agents;
+    //init_pedestrians = result.get()->agents;
     pedestrians.clear();
 
     for (auto agent : agents.agents) {
