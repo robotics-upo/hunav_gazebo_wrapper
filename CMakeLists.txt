@@ -52,7 +52,7 @@ target_link_libraries(HuNavPlugin ${GAZEBO_LIBRARIES}) #${ignition-common3_LIBRA
 
 
 add_executable(hunav_gazebo_world_generator src/WorldGenerator.cpp)
-ament_target_dependencies(hunav_gazebo_world_generator rclcpp hunav_msgs geometry_msgs tinyxml2_vendor)
+ament_target_dependencies(hunav_gazebo_world_generator rclcpp hunav_msgs geometry_msgs tf2_geometry_msgs tf2 tf2_ros tinyxml2_vendor)
 target_link_libraries(hunav_gazebo_world_generator ${TINYXML2_LIBRARY})
 
 install(TARGETS hunav_gazebo_world_generator
