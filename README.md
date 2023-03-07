@@ -1,5 +1,7 @@
 # hunav_gazebo_wrapper
 
+**This is a work in progress version**
+
 A ROS2 wrapper to use the [HuNavSim](https://github.com/robotics-upo/hunav_sim) with the Gazebo Simulator (tested with ROS Humble and Gazebo 11). 
 Different scenarios (a cafe, a warehouse, and a house) are included. A set of different human models are available too.
 
