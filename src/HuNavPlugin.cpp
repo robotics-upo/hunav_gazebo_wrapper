@@ -40,6 +40,9 @@ public:
   /// Callback when world is updated.
   /// \param[in] _info Updated simulation info.
   void OnUpdate(const gazebo::common::UpdateInfo &_info);
+
+  void goalCallback(const geometry_msgs::msg::PoseStamped::SharedPtr msg);
+
   /// \brief Helper function to collect the pedestrians data from Gazebo
   bool GetPedestrians();
   /// \brief Helper function to collect the robot data from Gazebo
@@ -79,6 +82,9 @@ public:
   /// \brief ros service to reset the agents in the hunav_manager
   rclcpp::Client<hunav_msgs::srv::ResetAgents>::SharedPtr rosSrvResetClient;
 
+  /// \brief ros service to reset the agents in the hunav_manager
+  rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub;
+
   /// \brief the robot as a agent msg
   hunav_msgs::msg::Agent robotAgent;
   hunav_msgs::msg::Agent init_robotAgent;
@@ -111,6 +117,10 @@ public:
   std::string robotName;
   std::string globalFrame;
 
+  bool waitForGoal;
+  bool goalReceived;
+  std::string goalTopic;
+
   /// \brief List of models to ignore. Used for vector field
   std::vector<std::string> ignoreModels;
 };
@@ -141,6 +151,24 @@ void HuNavPlugin::Load(gazebo::physics::WorldPtr _world, sdf::ElementPtr _sdf) {
     hnav_->globalFrame = _sdf->Get<std::string>("global_frame_to_publish");
   else
     hnav_->globalFrame = "map";
+
+  if (_sdf->HasElement("use_navgoal_to_start"))
+    hnav_->waitForGoal = _sdf->Get<bool>("use_navgoal_to_start");
+  else {
+    hnav_->waitForGoal = false;
+    RCLCPP_INFO(hnav_->rosnode->get_logger(),
+                "PARAMETER USE_NAVGOAL_TO_START IS NOT IN THE WORLD FILE!!");
+  }
+
+  if (hnav_->waitForGoal) {
+    hnav_->goalReceived = false;
+    if (_sdf->HasElement("navgoal_topic"))
+      hnav_->goalTopic = _sdf->Get<std::string>("navgoal_topic");
+    else
+      hnav_->goalTopic = "goal_pose";
+  } else {
+    hnav_->goalReceived = true;
+  }
 
   // Read models to be ignored
   if (_sdf->HasElement("ignore_models")) {
@@ -176,6 +204,14 @@ void HuNavPlugin::Load(gazebo::physics::WorldPtr _world, sdf::ElementPtr _sdf) {
   hnav_->rosSrvResetClient =
       hnav_->rosnode->create_client<hunav_msgs::srv::ResetAgents>(
           "reset_agents");
+
+  if (hnav_->waitForGoal) {
+    hnav_->goal_sub =
+        hnav_->rosnode->create_subscription<geometry_msgs::msg::PoseStamped>(
+            hnav_->goalTopic, 1,
+            std::bind(&HuNavPluginPrivate::goalCallback, hnav_.get(),
+                      std::placeholders::_1));
+  }
 
   hnav_->connection = gazebo::event::Events::ConnectWorldUpdateBegin(std::bind(
       &HuNavPluginPrivate::OnUpdate, hnav_.get(), std::placeholders::_1));
@@ -417,6 +453,12 @@ void HuNavPluginPrivate::InitializeAgents() {
   }
 }
 
+void HuNavPluginPrivate::goalCallback(
+    const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
+  RCLCPP_INFO(rosnode->get_logger(), "\n\nPlugin! GOAL RECEIVED!!!!\n\n");
+  goalReceived = true;
+}
+
 /////////////////////////////////////////////////
 void HuNavPluginPrivate::HandleObstacles() {
 
@@ -622,6 +664,13 @@ bool HuNavPluginPrivate::GetPedestrians() {
 void HuNavPluginPrivate::UpdateGazeboPedestrians(
     const gazebo::common::UpdateInfo &_info,
     const hunav_msgs::msg::Agents &_agents) {
+
+  if (goalReceived == false) {
+    RCLCPP_INFO(rosnode->get_logger(),
+                "HuNavPlugin. Waiting to receive the robot navigation goal...");
+    return;
+  }
+
   // update the Gazebo actors
   for (auto a : _agents.agents) {
 

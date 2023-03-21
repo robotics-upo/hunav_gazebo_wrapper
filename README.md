@@ -31,6 +31,8 @@ The plugin parameters are read as ROS2 parameters also by the *hunav_gazebo_worl
 *  ```robot_name```. Name of the Gazebo model corresponding to the robot that will be spawned.
 *  ```use_gazebo_obs```. If True, the closest obstacle for each agent will be computed and added to the agent features (Default: True).
 * ```global_frame_to_publish```. Coordinate frame in which the pedestrian positions are provided.
+* ```use_navgoal_to_start```. Boolean to indicate whether the plugin must wait for the robot to receive a navigation goal to start the movement of the human agents (Default: False).  
+* * ```navgoal_topic```. Name topic in which the robot navigation goal will be received. The message must be type *geometry_msgs/msg/PoseStamped*. This parameter is used only if the parameter ```use_navgoal_to_start``` is True. (Default: */goal_pose*).
 * ```ignore_models```. List of the Gazebo models than must be ignored by the pedestrians like the ground plane.
 
 An example snippet of the HuNavPlugin which is automatically inserted in the world file:
@@ -41,6 +43,8 @@ An example snippet of the HuNavPlugin which is automatically inserted in the wor
     <robot_name>robot</robot_name>
     <use_gazebo_obs>True</use_gazebo_obs>
     <global_frame_to_publish>map</global_frame_to_publish>
+    <use_navgoal_to_start>false</use_navgoal_to_start>
+    <navgoal_topic>goal_pose</navgoal_topic>
     <ignore_models>
     	<model>cafe</model>
         <model>ground_plane</model>
