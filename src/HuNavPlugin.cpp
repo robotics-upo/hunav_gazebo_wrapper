@@ -489,7 +489,7 @@ void HuNavPluginPrivate::HandleObstacles() {
 
         // This if is used to avoid an invisible obstacle that Gazebo is setting at (0,0). We don't know why it's happening.
         if (obsPos.X() != 0.0 && obsPos.Y() != 0.0){
-          RCLCPP_INFO(rosnode->get_logger(), "\n\nX --> %.2f and Y --> %.2f\n\n", obsPos.X(), obsPos.Y());
+          
           ignition::math::Line3d act_obs_line(actorPos, obsPos);
           std::tuple<bool, double, ignition::math::Vector3d> obs_intersect =
               modelObstacle->BoundingBox().Intersect(act_obs_line);
