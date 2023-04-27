@@ -1,3 +1,4 @@
 gazebo:
     ros__parameters:
+        use_sim_time: True
         publish_rate: 100.0

@@ -40,6 +40,9 @@ public:
   /// Callback when world is updated.
   /// \param[in] _info Updated simulation info.
   void OnUpdate(const gazebo::common::UpdateInfo &_info);
+
+  void goalCallback(const geometry_msgs::msg::PoseStamped::SharedPtr msg);
+
   /// \brief Helper function to collect the pedestrians data from Gazebo
   bool GetPedestrians();
   /// \brief Helper function to collect the robot data from Gazebo
@@ -79,6 +82,9 @@ public:
   /// \brief ros service to reset the agents in the hunav_manager
   rclcpp::Client<hunav_msgs::srv::ResetAgents>::SharedPtr rosSrvResetClient;
 
+  /// \brief ros service to reset the agents in the hunav_manager
+  rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub;
+
   /// \brief the robot as a agent msg
   hunav_msgs::msg::Agent robotAgent;
   hunav_msgs::msg::Agent init_robotAgent;
@@ -111,6 +117,10 @@ public:
   std::string robotName;
   std::string globalFrame;
 
+  bool waitForGoal;
+  bool goalReceived;
+  std::string goalTopic;
+
   /// \brief List of models to ignore. Used for vector field
   std::vector<std::string> ignoreModels;
 };
@@ -141,6 +151,25 @@ void HuNavPlugin::Load(gazebo::physics::WorldPtr _world, sdf::ElementPtr _sdf) {
     hnav_->globalFrame = _sdf->Get<std::string>("global_frame_to_publish");
   else
     hnav_->globalFrame = "map";
+
+  
+  if (_sdf->HasElement("use_navgoal_to_start"))
+    hnav_->waitForGoal = _sdf->Get<bool>("use_navgoal_to_start");
+  else {
+    hnav_->waitForGoal = false;
+    RCLCPP_INFO(hnav_->rosnode->get_logger(),
+                "PARAMETER USE_NAVGOAL_TO_START IS NOT IN THE WORLD FILE!!");
+  }
+
+  if (hnav_->waitForGoal) {
+    hnav_->goalReceived = false;
+    if (_sdf->HasElement("navgoal_topic"))
+      hnav_->goalTopic = _sdf->Get<std::string>("navgoal_topic");
+    else
+      hnav_->goalTopic = "goal_pose";
+  } else {
+    hnav_->goalReceived = true;
+  }
 
   // Read models to be ignored
   if (_sdf->HasElement("ignore_models")) {
@@ -176,6 +205,14 @@ void HuNavPlugin::Load(gazebo::physics::WorldPtr _world, sdf::ElementPtr _sdf) {
   hnav_->rosSrvResetClient =
       hnav_->rosnode->create_client<hunav_msgs::srv::ResetAgents>(
           "reset_agents");
+
+  if (hnav_->waitForGoal) {
+    hnav_->goal_sub =
+        hnav_->rosnode->create_subscription<geometry_msgs::msg::PoseStamped>(
+            hnav_->goalTopic, 1,
+            std::bind(&HuNavPluginPrivate::goalCallback, hnav_.get(),
+                      std::placeholders::_1));
+  }
 
   hnav_->connection = gazebo::event::Events::ConnectWorldUpdateBegin(std::bind(
       &HuNavPluginPrivate::OnUpdate, hnav_.get(), std::placeholders::_1));
@@ -417,6 +454,12 @@ void HuNavPluginPrivate::InitializeAgents() {
   }
 }
 
+void HuNavPluginPrivate::goalCallback(
+    const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
+  RCLCPP_INFO(rosnode->get_logger(), "\n\nPlugin! GOAL RECEIVED!!!!\n\n");
+  goalReceived = true;
+}
+
 /////////////////////////////////////////////////
 void HuNavPluginPrivate::HandleObstacles() {
 
@@ -445,44 +488,49 @@ void HuNavPluginPrivate::HandleObstacles() {
         ignition::math::Vector3d actorPos = agent->WorldPose().Pos();
         ignition::math::Vector3d obsPos = modelObstacle->WorldPose().Pos();
 
+        // This if is used to avoid an invisible obstacle that Gazebo is setting at (0,0). We don't know why it's happening.
+        if (obsPos.X() != 0.0 && obsPos.Y() != 0.0){
+          RCLCPP_INFO(rosnode->get_logger(), "\n\nX --> %.2f and Y --> %.2f\n\n", obsPos.X(), obsPos.Y());
+          ignition::math::Line3d act_obs_line(actorPos, obsPos);
+          std::tuple<bool, double, ignition::math::Vector3d> obs_intersect =
+              modelObstacle->BoundingBox().Intersect(act_obs_line);
+
+          ignition::math::Vector3d intersecPos;
+          double dist = -1;
+
+          if (std::get<0>(obs_intersect) == true) {
+            intersecPos = std::get<2>(obs_intersect);
+            dist = std::get<1>(obs_intersect);
+          }
+
+          /*ignition::math::Vector3d goalPos(pedestrians[i].goals[0].position.x,
+                                          pedestrians[i].goals[0].position.y,
+                                          actorPos.Z());
+          ignition::math::Line3d act_goal_line(actorPos, goalPos);
+          std::tuple<bool, double, ignition::math::Vector3d> goal_intersect =
+              modelObstacle->BoundingBox().Intersect(act_goal_line);
+          if (std::get<0>(goal_intersect) == true) {
+            if (dist > 0.0 && std::get<1>(goal_intersect) < dist) {
+              intersecPos = std::get<2>(goal_intersect);
+              dist = std::get<1>(goal_intersect);
+            }
+          }*/
+
+          if (dist > 0) {
+            ignition::math::Vector3d offset = intersecPos - actorPos;
+            double modelDist = offset.Length(); //-approximated_radius;
+            // double dist2 = actorPos.Distance(std::get<2>(intersect));
+
+            if (modelDist < minDist) {
+              minDist = modelDist;
+              // closest_obs = offset;
+              closest_obstacle = intersecPos;
+            }
+          }
+        }
         // std::tuple<bool, double, ignition::math::Vector3d> intersect =
         //     modelObstacle->BoundingBox().Intersect(obsPos, actorPos,
         //     0.05, 8.0);
-        ignition::math::Line3d act_obs_line(actorPos, obsPos);
-        std::tuple<bool, double, ignition::math::Vector3d> obs_intersect =
-            modelObstacle->BoundingBox().Intersect(act_obs_line);
-
-        ignition::math::Vector3d intersecPos;
-        double dist = -1;
-        if (std::get<0>(obs_intersect) == true) {
-          intersecPos = std::get<2>(obs_intersect);
-          dist = std::get<1>(obs_intersect);
-        }
-
-        /*ignition::math::Vector3d goalPos(pedestrians[i].goals[0].position.x,
-                                         pedestrians[i].goals[0].position.y,
-                                         actorPos.Z());
-        ignition::math::Line3d act_goal_line(actorPos, goalPos);
-        std::tuple<bool, double, ignition::math::Vector3d> goal_intersect =
-            modelObstacle->BoundingBox().Intersect(act_goal_line);
-        if (std::get<0>(goal_intersect) == true) {
-          if (dist > 0.0 && std::get<1>(goal_intersect) < dist) {
-            intersecPos = std::get<2>(goal_intersect);
-            dist = std::get<1>(goal_intersect);
-          }
-        }*/
-
-        if (dist > 0) {
-          ignition::math::Vector3d offset = intersecPos - actorPos;
-          double modelDist = offset.Length(); //-approximated_radius;
-          // double dist2 = actorPos.Distance(std::get<2>(intersect));
-
-          if (modelDist < minDist) {
-            minDist = modelDist;
-            // closest_obs = offset;
-            closest_obstacle = intersecPos;
-          }
-        }
       }
     }
     if (minDist <= 10.0) {
@@ -622,6 +670,13 @@ bool HuNavPluginPrivate::GetPedestrians() {
 void HuNavPluginPrivate::UpdateGazeboPedestrians(
     const gazebo::common::UpdateInfo &_info,
     const hunav_msgs::msg::Agents &_agents) {
+
+  if (goalReceived == false) {
+    RCLCPP_INFO(rosnode->get_logger(),
+                "HuNavPlugin. Waiting to receive the robot navigation goal...");
+    return;
+  }
+
   // update the Gazebo actors
   for (auto a : _agents.agents) {
 

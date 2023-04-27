@@ -30,6 +30,8 @@ def generate_launch_description():
     rate = LaunchConfiguration('update_rate')
     robot_name = LaunchConfiguration('robot_name')
     global_frame = LaunchConfiguration('global_frame_to_publish')
+    use_navgoal = LaunchConfiguration('use_navgoal_to_start')
+    navgoal_topic = LaunchConfiguration('navgoal_topic')
     ignore_models = LaunchConfiguration('ignore_models')
 
     # Robot parameters
@@ -79,6 +81,8 @@ def generate_launch_description():
         {'update_rate': rate},
         {'robot_name': robot_name},
         {'global_frame_to_publish': global_frame},
+        {'use_navgoal_to_start': use_navgoal},
+        {'navgoal_topic': navgoal_topic},
         {'ignore_models': ignore_models}]
         #arguments=['--ros-args', '--params-file', conf_file]
     )
@@ -264,6 +268,14 @@ def generate_launch_description():
         'global_frame_to_publish', default_value='map',
         description='Name of the global frame in which the position of the agents are provided'
     )
+    declare_use_navgoal = DeclareLaunchArgument(
+        'use_navgoal_to_start', default_value='false',
+        description='Whether to start the agents movements when a navigation goal is received or not'
+    )
+    declare_navgoal_topic = DeclareLaunchArgument(
+        'navgoal_topic', default_value='goal_pose',
+        description='Name of the topic in which navigation goal for the robot will be published'
+    )
     declare_ignore_models = DeclareLaunchArgument(
         'ignore_models', default_value='aws_robomaker_warehouse_GroundB_01_001',
         description='list of Gazebo models that the agents should ignore as obstacles as the ground_plane. Indicate the models with a blank space between them'
@@ -307,6 +319,8 @@ def generate_launch_description():
     ld.add_action(declare_update_rate)
     ld.add_action(declare_robot_name)
     ld.add_action(declare_frame_to_publish)
+    ld.add_action(declare_use_navgoal)
+    ld.add_action(declare_navgoal_topic)
     ld.add_action(declare_ignore_models)
     ld.add_action(declare_arg_verbose)
     ld.add_action(declare_arg_namespace)

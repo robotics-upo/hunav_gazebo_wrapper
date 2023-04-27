@@ -88,6 +88,8 @@ private:
   std::vector<std::string> goal_params_;
   std::string base_world_;
   bool plug_use_gazebo_obs_;
+  bool plug_use_navgoal_to_start_;
+  std::string plug_navgoal_topic_;
   double plug_update_rate_;
   std::string plug_robot_name_;
   std::string plug_global_frame_;

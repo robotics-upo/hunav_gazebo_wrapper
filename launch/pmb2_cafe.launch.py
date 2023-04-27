@@ -30,6 +30,8 @@ def generate_launch_description():
     rate = LaunchConfiguration('update_rate')
     robot_name = LaunchConfiguration('robot_name')
     global_frame = LaunchConfiguration('global_frame_to_publish')
+    use_navgoal = LaunchConfiguration('use_navgoal_to_start')
+    navgoal_topic = LaunchConfiguration('navgoal_topic')
     ignore_models = LaunchConfiguration('ignore_models')
 
     # Robot parameters
@@ -68,7 +70,7 @@ def generate_launch_description():
     ])
 
     # the node looks for the base_world file in the directory 'worlds'
-    # of the package hunav_gazebo_plugin direclty. So we do not need to 
+    # of the package hunav_gazebo_plugin directly. So we do not need to 
     # indicate the path
     hunav_gazebo_worldgen_node = Node(
         package='hunav_gazebo_wrapper',
@@ -79,6 +81,8 @@ def generate_launch_description():
         {'update_rate': rate},
         {'robot_name': robot_name},
         {'global_frame_to_publish': global_frame},
+        {'use_navgoal_to_start': use_navgoal},
+        {'navgoal_topic': navgoal_topic},
         {'ignore_models': ignore_models}]
         #arguments=['--ros-args', '--params-file', conf_file]
     )
@@ -87,9 +91,9 @@ def generate_launch_description():
         OnProcessStart(
             target_action=hunav_loader_node,
             on_start=[
-                LogInfo(msg='HunNavLoader started, launching HuNav_Gazebo_world_generator after 2 seconds...'),
+                LogInfo(msg='HunNavLoader started, launching HuNav_Gazebo_world_generator after 3 seconds...'),
                 TimerAction(
-                    period=2.0,
+                    period=3.0,
                     actions=[hunav_gazebo_worldgen_node],
                 )
             ]
@@ -153,7 +157,7 @@ def generate_launch_description():
         _boolean_command('verbose'), '',
         '-s ', 'libgazebo_ros_init.so',
         '-s ', 'libgazebo_ros_factory.so',
-        #'-s ', #'libgazebo_ros_state.so',
+        '-s ', 'libgazebo_ros_state.so',
         '--ros-args',
         '--params-file', config_file,
     ]
@@ -201,9 +205,9 @@ def generate_launch_description():
         OnProcessStart(
             target_action=hunav_gazebo_worldgen_node,
             on_start=[
-                LogInfo(msg='GenerateWorld started, launching Gazebo after 2 seconds...'),
+                LogInfo(msg='GenerateWorld started, launching Gazebo after 3 seconds...'),
                 TimerAction(
-                    period=2.0,
+                    period=3.0,
                     actions=[gzserver_process, gzclient_process],
                 )
             ]
@@ -270,6 +274,14 @@ def generate_launch_description():
         'global_frame_to_publish', default_value='map',
         description='Name of the global frame in which the position of the agents are provided'
     )
+    declare_use_navgoal = DeclareLaunchArgument(
+        'use_navgoal_to_start', default_value='true',
+        description='Whether to start the agents movements when a navigation goal is received or not'
+    )
+    declare_navgoal_topic = DeclareLaunchArgument(
+        'navgoal_topic', default_value='goal_pose',
+        description='Name of the topic in which navigation goal for the robot will be published'
+    )
     declare_ignore_models = DeclareLaunchArgument(
         'ignore_models', default_value='ground_plane cafe',
         description='list of Gazebo models that the agents should ignore as obstacles as the ground_plane. Indicate the models with a blank space between them'
@@ -316,6 +328,8 @@ def generate_launch_description():
     ld.add_action(declare_update_rate)
     ld.add_action(declare_robot_name)
     ld.add_action(declare_frame_to_publish)
+    ld.add_action(declare_use_navgoal)
+    ld.add_action(declare_navgoal_topic)
     ld.add_action(declare_ignore_models)
     ld.add_action(declare_arg_verbose)
     ld.add_action(declare_arg_namespace)
@@ -332,6 +346,8 @@ def generate_launch_description():
     # launch hunav_loader and the WorldGenerator
     # 2 seconds later
     ld.add_action(hunav_loader_node)
+    # hunav behavior manager node
+    #ld.add_action(hunav_manager_node)
     ld.add_action(ordered_launch_event)
 
     # hunav behavior manager node

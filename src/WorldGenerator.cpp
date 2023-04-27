@@ -84,6 +84,10 @@ void WorldGenerator::readPluginParams() {
       this->declare_parameter<std::string>("robot_name", std::string("robot"));
   plug_global_frame_ = this->declare_parameter<std::string>(
       "global_frame_to_publish", std::string("map"));
+  plug_use_navgoal_to_start_ =
+      this->declare_parameter<bool>("use_navgoal_to_start", false);
+  plug_navgoal_topic_ = this->declare_parameter<std::string>(
+      "navgoal_topic", std::string("goal_pose"));
   this->declare_parameter(std::string("ignore_models"), rclcpp::ParameterType::PARAMETER_STRING);
   rclcpp::Parameter ig_models = this->get_parameter("ignore_models");
   std::string models = ig_models.as_string();
@@ -193,13 +197,15 @@ void WorldGenerator::getAgentsService(
 bool WorldGenerator::processXML() {
   // std::cout << base_world_ << std::endl;
 
-  std::string skin_filename[] = {"elegant_man.dae", "casual_man.dae", "elegant_woman.dae",
-                                 "regular_man.dae", "worker_man.dae", "walk.dae", "walk-green.dae",
-                                 "walk-blue.dae", "walk-red.dae", "stand.dae"};
+  std::string skin_filename[] = {"elegant_man.dae",   "casual_man.dae",
+                                 "elegant_woman.dae", "regular_man.dae",
+                                 "worker_man.dae",    "walk.dae",
+                                 "walk-green.dae",    "walk-blue.dae",
+                                 "walk-red.dae",      "stand.dae"};
   std::string animation_filename[] = {
       "07_01-walk.bvh",         "69_02_walk_forward.bvh",
-      "137_28-normal_wait.bvh",     "142_01-walk_childist.bvh",
-      "07_04-slow_walk.bvh",   "02_01-walk.bvh",
+      "137_28-normal_wait.bvh", "142_01-walk_childist.bvh",
+      "07_04-slow_walk.bvh",    "02_01-walk.bvh",
       "142_17-walk_scared.bvh", "17_01-walk_with_anger.bvh"};
 
   // load the base world file
@@ -296,6 +302,11 @@ bool WorldGenerator::processXML() {
       doc.NewElement("global_frame_to_publish");
   pGlobalFrame->SetText(plug_global_frame_.c_str());
 
+  tinyxml2::XMLElement *pUseGoal = doc.NewElement("use_navgoal_to_start");
+  pUseGoal->SetText(plug_use_navgoal_to_start_);
+  tinyxml2::XMLElement *pGoalTopic = doc.NewElement("navgoal_topic");
+  pGoalTopic->SetText(plug_navgoal_topic_.c_str());
+
   tinyxml2::XMLElement *pIgnoreModels = doc.NewElement("ignore_models");
   std::vector<tinyxml2::XMLElement *> pModels;
   for (std::string st : plug_ignore_models_) {
@@ -315,7 +326,9 @@ bool WorldGenerator::processXML() {
   plugin->InsertAfterChild(pUpdate, pRobot);
   plugin->InsertAfterChild(pRobot, pGazebo);
   plugin->InsertAfterChild(pGazebo, pGlobalFrame);
-  plugin->InsertAfterChild(pGlobalFrame, pIgnoreModels);
+  plugin->InsertAfterChild(pGlobalFrame, pUseGoal);
+  plugin->InsertAfterChild(pUseGoal, pGoalTopic);
+  plugin->InsertAfterChild(pGoalTopic, pIgnoreModels);
   tinyxml2::XMLElement *ignore = doc.FirstChildElement("sdf")
                                      ->FirstChildElement("world")
                                      ->FirstChildElement("plugin")
