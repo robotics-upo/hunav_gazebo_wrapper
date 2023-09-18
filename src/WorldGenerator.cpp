@@ -159,8 +159,8 @@ void WorldGenerator::readAgentParams() {
     std::cout << "id: " << a.id << " skin:" << (int)a.skin
               << " behavior:" << (int)a.behavior
               << " group_id:" << (int)a.group_id
-              << " max_vel:" << a.desired_velocity << " radius:" << a.radius
-              << " initpose.x:" << a.position.position.x << std::endl;
+              << " max_vel:" << a.desired_velocity << " radius:" << a.radius << std::endl
+              << " initpose.x:" << a.position.position.x << " initpose.y:" << a.position.position.y << std::endl;
 
     auto goal_names = aparams[12].as_string_array();
     for (std::string goal : goal_names) {
@@ -190,6 +190,8 @@ void WorldGenerator::getAgentsService(
 
   int r = request->empty;
   response->agents = agents_;
+  std::cout << "Sending " << agents_.agents.size() << " agents to agent_manager" << std::endl;
+  std::cout << "Shutting down WorldGenerator..." << std::endl;
   // turn off the node since we do not use it anymore
   rclcpp::shutdown();
 }

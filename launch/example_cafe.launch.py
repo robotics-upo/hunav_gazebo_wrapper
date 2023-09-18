@@ -137,13 +137,14 @@ def generate_launch_description():
 
     # Gazebo server
     gzserver_cmd = [
-        use_nvidia_gpu,
+        #use_nvidia_gpu,
         'gzserver ',
         #'--pause ',
          world_path, 
         _boolean_command('verbose'), '',
         '-s ', 'libgazebo_ros_init.so',
         '-s ', 'libgazebo_ros_factory.so',
+        '-s ', 'libgazebo_ros_state.so',
         '--ros-args',
         '--params-file', config_file,
     ]
