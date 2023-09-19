@@ -109,3 +109,10 @@ ros2 launch hunav_gazebo_wrapper pmb2_cafe.launch.py
 ## TODOs
 
 * Augment the number and quality of the 3d models that represent the hunav_agents
+
+
+## Acknowledgements
+
+This work is partially supported by Programa Operativo FEDER Andalucia 2014-2020, Consejeria de Economía, Conocimiento y Universidades (DeepBot, PY20\_00817) and the project NHoA (PLEC2021-007868) and NORDIC (TED2021-132476B-I00), funded by MCIN/AEI/10.13039/501100011033 and the European Union NextGenerationEU/PRTR.
+
+<img src="https://github.com/robotics-upo/hunav_gazebo_wrapper/blob/humble/media/images/image.png" width="400">
