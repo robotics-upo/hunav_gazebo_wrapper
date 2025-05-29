@@ -50,8 +50,8 @@ def generate_launch_description():
 
     # agent configuration file
     agent_conf_file = PathJoinSubstitution([
-        FindPackageShare('hunav_agent_manager'),
-        'config',
+        FindPackageShare('hunav_gazebo_wrapper'),
+        'scenarios',
         LaunchConfiguration('configuration_file')
     ])
 
@@ -259,8 +259,8 @@ def generate_launch_description():
     #     "maps",
     #     "map_cafe2.yaml"
     # ],)
-    map_dir = get_package_share_directory('hunav_rviz2_panel') 
-    map_path = path.join(map_dir, 'maps', 'small_house.yaml') 
+    map_dir = get_package_share_directory('hunav_gazebo_wrapper') 
+    map_path = path.join(map_dir, 'maps', 'house.yaml') 
 
     pmb2_gazebo = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([pmb2_gazebo_launch]),
@@ -281,7 +281,7 @@ def generate_launch_description():
     )
 
     declare_agents_conf_file = DeclareLaunchArgument(
-        'configuration_file', default_value='agents.yaml',
+        'configuration_file', default_value='agents_house.yaml',
         description='Specify configuration file name in the cofig directory'
     )
     declare_metrics_conf_file = DeclareLaunchArgument(
@@ -289,7 +289,7 @@ def generate_launch_description():
         description='Specify the name of the metrics configuration file in the cofig directory'
     )
     declare_arg_world = DeclareLaunchArgument(
-        'base_world', default_value='small_house.world',
+        'base_world', default_value='house.world',
         description='Specify world file name'
     )
     declare_gz_obs = DeclareLaunchArgument(
