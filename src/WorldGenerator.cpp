@@ -56,7 +56,7 @@ WorldGenerator::WorldGenerator() : Node("hunav_gazebo_world_generator")
               ".cyclic_goals",
               ".goals" };
   // names of the goal parameters
-  goal_params_ = { ".x", ".y", ".h" };
+  goal_params_ = {".x", ".y"}; //.h
 
   agents_srv_ = this->create_service<hunav_msgs::srv::GetAgents>(
       std::string("get_agents"), std::bind(&hunav::WorldGenerator::getAgentsService, this, _1, _2));
@@ -130,12 +130,22 @@ void WorldGenerator::readAgentParams()
     RCLCPP_INFO(this->get_logger(), "service not available, waiting again...");
   }
   RCLCPP_INFO(this->get_logger(), "Reading parameters...");
-  auto parameters = parameters_client->get_parameters({ "map", "agents" });
+
+  // To check the available parameters
+  // auto result = parameters_client->list_parameters({}, 3);
+  // for (auto &name : result.names) {
+  //   RCLCPP_INFO(this->get_logger(), "Disponible: %s", name.c_str());
+  // }
+
+
+  auto parameters = parameters_client->get_parameters({ "map", "agents"});
 
   std::string map = parameters[0].value_to_string();
 
-  std::cout << "map parameter: " << map << std::endl;
-  std::cout << "agent names: " << parameters[1].value_to_string() << std::endl << std::endl;
+  //std::cout << "map parameter: " << map << std::endl;
+  RCLCPP_INFO(this->get_logger(), "map parameter: %s", map.c_str());
+  //std::cout << "agent names: " << parameters[1].value_to_string() << std::endl << std::endl;
+  RCLCPP_INFO(this->get_logger(), "agent names: %s", parameters[1].value_to_string().c_str());
 
   //   for (auto &parameter : parameters) {
   //     std::cout << "\nParameter name: " << parameter.get_name() << std::endl;
@@ -143,18 +153,24 @@ void WorldGenerator::readAgentParams()
   //               << "): " << parameter.value_to_string() << std::endl;
   //   }
 
+  //auto global_goals = parameters[2].as_string_array();
+
   auto agent_names = parameters[1].as_string_array();
   for (std::string an : agent_names)
   {
-    std::cout << "agent name: " << an << std::endl;
+    //std::cout << "agent name: " << an << std::endl;
+    RCLCPP_INFO(this->get_logger(), "agent name: %s", an.c_str());
     std::vector<std::string> agent_params = params_;
     for (unsigned int i = 0; i < params_.size(); i++)
     {
       agent_params[i] = an + agent_params[i];
       // std::cout << "agent_params " << i << ": " << agent_params[i] <<
       // std::endl;
+      RCLCPP_INFO(this->get_logger(), "agent_params %d: %s", i, agent_params[i].c_str());
     }
-    auto aparams = parameters_client->get_parameters(agent_params);
+    auto aparams = parameters_client->get_parameters({agent_params});
+    //auto aparams = parameters_client->get_parameters({an});
+    
 
     // {"agent1.id": {"type": "integer", "value": "1"},
     //"agent1.skin": {"type": "integer", "value": "0"},
@@ -179,19 +195,47 @@ void WorldGenerator::readAgentParams()
     //"agent1.cyclic_goals": {"type": "bool", "value": "true"},
     //"agent1.goals": {"type": "string_array", "value": "[g0, g1, g2]"}}
 
+    RCLCPP_INFO(this->get_logger(), "Agent parameters for %s:", an.c_str());
+    RCLCPP_INFO(this->get_logger(), "  %li parameters found", aparams.size());
+    for (unsigned int i = 0; i < aparams.size(); i++)
+    {
+      RCLCPP_INFO(this->get_logger(), "  %s: %s", aparams[i].get_name().c_str(),
+                  aparams[i].value_to_string().c_str());
+      // std::cout << "  " << aparams[i].get_name() << ": " << aparams[i].value_to_string() << std::endl;
+    }
     // std::cout << "aparams: " << aparams << std::endl;
     hunav_msgs::msg::Agent a;
     a.name = an;
     // std::cout << "aparams[0]: " << aparams[0] << std::endl;
     a.id = aparams[0].as_int();
     // std::cout << "id: " << a.id << std::endl;
+    RCLCPP_INFO(this->get_logger(), "Agent id: %d", a.id);
     a.type = hunav_msgs::msg::Agent::PERSON;
     // std::cout << "aparams[1]: " << aparams[1] << std::endl;
     a.skin = aparams[1].as_int();
     // std::cout << "skin: " << a.skin << std::endl;
+    RCLCPP_INFO(this->get_logger(), "Agent skin: %d", a.skin);
 
     // behavior
-    a.behavior.type = aparams[2].as_int();
+    //type
+    std::string behavior_type = aparams[2].as_string();
+    if (behavior_type == "Regular")
+        a.behavior.type = hunav_msgs::msg::AgentBehavior::BEH_REGULAR;
+    else if(behavior_type == "Impassive")
+        a.behavior.type = hunav_msgs::msg::AgentBehavior::BEH_IMPASSIVE;
+    else if(behavior_type == "Surprised")
+        a.behavior.type = hunav_msgs::msg::AgentBehavior::BEH_SURPRISED;
+    else if(behavior_type == "Scared")
+        a.behavior.type = hunav_msgs::msg::AgentBehavior::BEH_SCARED;
+    else if(behavior_type == "Curious")
+        a.behavior.type = hunav_msgs::msg::AgentBehavior::BEH_CURIOUS;
+    else if(behavior_type == "Threatening")
+        a.behavior.type = hunav_msgs::msg::AgentBehavior::BEH_THREATENING;
+    else{
+        RCLCPP_WARN(this->get_logger(), "Unknown behavior type: %s, defaulting to Regular", behavior_type.c_str());
+        a.behavior.type = hunav_msgs::msg::AgentBehavior::BEH_REGULAR;
+    }
+    //a.behavior.type = aparams[2].as_int();
     a.behavior.configuration = aparams[3].as_int();
     a.behavior.duration = aparams[4].as_double();
     a.behavior.once = aparams[5].as_bool();
@@ -218,7 +262,7 @@ void WorldGenerator::readAgentParams()
     a.position.position.z = aparams[17].as_double();
     a.yaw = aparams[18].as_double();
     tf2::Quaternion myQuaternion;
-    myQuaternion.setRPY(0, 0, aparams[9].as_double());
+    myQuaternion.setRPY(0, 0, a.yaw);
     a.position.orientation = tf2::toMsg(myQuaternion);
     a.goal_radius = aparams[19].as_double();
     a.cyclic_goals = aparams[20].as_bool();
@@ -234,20 +278,21 @@ void WorldGenerator::readAgentParams()
               << " social_force_factor:" << a.behavior.social_force_factor
               << " other_force_factor:" << a.behavior.other_force_factor << std::endl;
 
-    auto goal_names = aparams[21].as_string_array();
-    for (std::string goal : goal_names)
+    //auto goal_names = aparams[21].as_string_array();
+    auto goal_names = aparams[21].as_integer_array();
+    for (auto goal : goal_names)
     {
       std::vector<std::string> gnames = goal_params_;
       for (unsigned int i = 0; i < goal_params_.size(); i++)
       {
-        gnames[i] = an + "." + goal + goal_params_[i];
+        gnames[i] = "global_goals." + std::to_string(goal) + goal_params_[i];
       }
       auto gparams = parameters_client->get_parameters({ gnames });
       geometry_msgs::msg::Pose p;
       p.position.x = gparams[0].as_double();
       p.position.y = gparams[1].as_double();
       tf2::Quaternion quat;
-      quat.setRPY(0, 0, gparams[2].as_double());
+      quat.setRPY(0, 0, 0); //gparams[2].as_double()
       p.orientation = tf2::toMsg(quat);
       a.goals.push_back(p);
       std::cout << "goal: " << goal << " x:" << p.position.x << " y:" << p.position.y << std::endl;

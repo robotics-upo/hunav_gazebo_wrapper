@@ -306,7 +306,7 @@ def generate_launch_description():
         description='Whether to fill the agents obstacles with closest Gazebo obstacle or not'
     )
     declare_update_rate = DeclareLaunchArgument(
-        'update_rate', default_value='100.0',
+        'update_rate', default_value='1000.0',
         description='Update rate of the plugin'
     )
     declare_robot_name = DeclareLaunchArgument(
@@ -330,7 +330,7 @@ def generate_launch_description():
         description='If launch the pmb2 navigation system'
     )
     declare_ignore_models = DeclareLaunchArgument(
-        'ignore_models', default_value='aws_robomaker_warehouse_GroundB_01_001 ground_plane cafe',
+        'ignore_models', default_value='aws_robomaker_warehouse_GroundB_01_001 ground_plane cafe Carpet_01_001 Carpet_01_002 Chandeliers_01_001 Chandeliers_01_002 Chandeliers_01_003 FloorB_01_001',
         description='list of Gazebo models that the agents should ignore as obstacles as the ground_plane. Indicate the models with a blank space between them'
     )
     declare_arg_verbose = DeclareLaunchArgument(
