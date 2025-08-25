@@ -361,7 +361,7 @@ bool HuNavPluginPrivate::InitializeRobot()
   }
   else
   {
-    RCLCPP_INFO(rosnode->get_logger(), "Robot %s detected, initializing params...", robotName.c_str());
+    RCLCPP_INFO(rosnode->get_logger(), "Robot %s detected!!! initializing params...", robotName.c_str());
     // Initialize robot agent
     ignition::math::Vector3d pos = robotModel->WorldPose().Pos();
     ignition::math::Vector3d rpy = robotModel->WorldPose().Rot().Euler();
@@ -777,7 +777,7 @@ bool HuNavPluginPrivate::GetRobot()
   {
     if (!InitializeRobot())
     {
-      RCLCPP_ERROR(rosnode->get_logger(), "Robot model %s not found!!!!", robotName.c_str());
+      //RCLCPP_ERROR(rosnode->get_logger(), "Robot model %s not found!!!!", robotName.c_str());
       return false;
     }
     return true;

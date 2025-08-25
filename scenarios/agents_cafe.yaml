@@ -20,6 +20,12 @@ hunav_loader:
       5:
         x: -2.880
         y: 0.028
+      6:
+        x: 2.000
+        y: 4.226
+      7:
+        x: 0.411
+        y: -6.039
     agents:
       - agent1
       - agent2
@@ -46,6 +52,7 @@ hunav_loader:
         other_force_factor: 20.0
       goals:
         - 1
+        - 6
     agent2:
       id: 2
       group_id: -1
@@ -70,7 +77,8 @@ hunav_loader:
         social_force_factor: 5.0
         other_force_factor: 20.0
       goals:
-        - 2
+        - 5
+        - 7
     agent3:
       id: 3
       group_id: -1

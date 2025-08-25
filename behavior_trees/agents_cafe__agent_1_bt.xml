@@ -49,17 +49,17 @@
     </Action>
     <Action ID="RegularNav">
       <input_port name="agent_id" type="int">1</input_port>
-      <input_port name="time_step" type="double" default="0.01"/>
+      <input_port name="time_step" type="double" default="0.1"/>
     </Action>
     <Action ID="SurprisedNav">
       <input_port name="agent_id" type="int">1</input_port>
-      <input_port name="time_step" type="double" default="0.01"/>
+      <input_port name="time_step" type="double" default="0.1"/>
       <input_port name="beh_duration" type="double" default="5.0"/>
       <input_port name="only_once" type="bool" default="true"/>
     </Action>
     <Action ID="CuriousNav">
       <input_port name="agent_id" type="int">1</input_port>
-      <input_port name="time_step" type="double" default="0.01"/>
+      <input_port name="time_step" type="double" default="0.1"/>
       <input_port name="beh_duration" type="double" default="5.0"/>
       <input_port name="only_once" type="bool" default="true"/>
       <input_port name="agent_vel" type="double" default="1.0"/>
@@ -67,7 +67,7 @@
     </Action>
     <Action ID="ScaredNav">
       <input_port name="agent_id" type="int">1</input_port>
-      <input_port name="time_step" type="double" default="0.01"/>
+      <input_port name="time_step" type="double" default="0.1"/>
       <input_port name="beh_duration" type="double" default="5.0"/>
       <input_port name="only_once" type="bool" default="true"/>
       <input_port name="runaway_vel" type="double" default="1.5"/>
@@ -75,7 +75,7 @@
     </Action>
     <Action ID="ThreateningNav">
       <input_port name="agent_id" type="int">1</input_port>
-      <input_port name="time_step" type="double" default="0.01"/>
+      <input_port name="time_step" type="double" default="0.1"/>
       <input_port name="beh_duration" type="double" default="5.0"/>
       <input_port name="only_once" type="bool" default="true"/>
       <input_port name="goal_dist" type="double" default="1.0"/>
@@ -115,40 +115,40 @@
       <input_port name="main_agent_id" type="int">1</input_port>
       <input_port name="conversation_duration" type="double" default="10.0"/>
       <input_port name="goal_id" type="int"/>
-      <input_port name="time_step" type="double" default="0.01"/>
+      <input_port name="time_step" type="double" default="0.1"/>
       <input_port name="non_main_agent_ids" type="std::string"/>
     </Action>
     <Action ID="GoTo">
       <input_port name="agent_id" type="int">1</input_port>
-      <input_port name="time_step" type="double" default="0.01"/>
+      <input_port name="time_step" type="double" default="0.1"/>
       <input_port name="goal_id" type="int">Goal ID from agent's ROS goals to navigate to</input_port>
       <input_port name="tolerance" type="double" default="0.1">Distance tolerance to consider goal reached</input_port>
     </Action>
     <Action ID="ApproachAgent">
       <input_port name="agent_id" type="int">1</input_port>
       <input_port name="target_agent_id" type="int">2</input_port>
-      <input_port name="time_step" type="double" default="0.01"/>
+      <input_port name="time_step" type="double" default="0.1"/>
       <input_port name="closest_dist" type="double" default="0.5"/>
       <input_port name="max_vel" type="double" default="1.0"/>
       <input_port name="duration" type="double" default="5.0"/>
     </Action>
     <Action ID="ApproachRobot">
       <input_port name="agent_id" type="int">1</input_port>
-      <input_port name="time_step" type="double" default="0.01"/>
+      <input_port name="time_step" type="double" default="0.1"/>
       <input_port name="closest_dist" type="double" default="1.5"/>
       <input_port name="max_vel" type="double" default="1.8"/>
       <input_port name="duration" type="double" default="5.0"/>
     </Action>
     <Action ID="BlockRobot">
       <input_port name="agent_id" type="int">1</input_port>
-      <input_port name="time_step" type="double" default="0.01"/>
+      <input_port name="time_step" type="double" default="0.1"/>
       <input_port name="front_dist" type="double" default="1.0"/>
       <input_port name="duration" type="double" default="5.0"/>
     </Action>
     <Action ID="BlockAgent">
       <input_port name="agent_id" type="int">1</input_port>
       <input_port name="target_agent_id" type="int">2</input_port>
-      <input_port name="time_step" type="double" default="0.01"/>
+      <input_port name="time_step" type="double" default="0.1"/>
       <input_port name="front_dist" type="double" default="1.0"/>
       <input_port name="duration" type="double" default="5.0"/>
     </Action>
@@ -217,9 +217,12 @@
   <Fallback name="MainFallback">
     <!-- Goal setting Sequence -->
     <Sequence name="SetGoals">
+        <RunOnce>
+          <SetGoal agent_id="{id}" goal_id="1"/>
+        </RunOnce>
         <Inverter>
           <RunOnce>
-            <SetGoal agent_id="{id}" goal_id="1"/>
+            <SetGoal agent_id="{id}" goal_id="6"/>
           </RunOnce>
         </Inverter>
 
