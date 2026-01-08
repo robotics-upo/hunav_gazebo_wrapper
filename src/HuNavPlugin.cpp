@@ -923,7 +923,7 @@ void HuNavPluginPrivate::UpdateGazeboPedestrians(const gazebo::common::UpdateInf
     double diff = normalizeAngle(yaw - currAngle);
     if (std::fabs(diff) > IGN_DTOR(10))
     {
-      yaw = normalizeAngle(currAngle + (diff * 0.1));  // 0.01, 0.005
+      yaw = normalizeAngle(currAngle + (diff * 0.01));  // ok: 01,  tested: 0.01, 0.005
     }
 
     auto entity_lin_vel = gazebo_ros::Convert<ignition::math::Vector3d>(a.velocity.linear);
