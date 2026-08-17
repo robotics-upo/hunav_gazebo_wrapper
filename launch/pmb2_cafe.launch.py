@@ -346,7 +346,7 @@ def generate_launch_description():
         description='Whether to start the agents movements when a navigation goal is received or not'
     )
     declare_navgoal_topic = DeclareLaunchArgument(
-        'navgoal_topic', default_value='goal_pose',
+        'navgoal_topic', default_value='hunav_goal_pose',
         description='Name of the topic in which navigation goal for the robot will be published'
     )
     declare_navigation = DeclareLaunchArgument(

@@ -275,6 +275,15 @@ def generate_launch_description():
         parameters=[metrics_file]
     )
 
+    # action_monitor_node
+    action_monitor_node = Node(
+        package='hunav_evaluator',
+        executable='action_monitor_node',
+        name='action_monitor_node',
+        output='screen',
+        condition=IfCondition(use_navgoal)
+    )
+
     # DO NOT Launch this if any robot localization is launched
     static_tf_node = Node(
         package = "tf2_ros", 
@@ -318,11 +327,11 @@ def generate_launch_description():
         description='Name of the global frame in which the position of the agents are provided'
     )
     declare_use_navgoal = DeclareLaunchArgument(
-        'use_navgoal_to_start', default_value='False',
+        'use_navgoal_to_start', default_value='True',
         description='Whether to start the agents movements when a navigation goal is received or not'
     )
     declare_navgoal_topic = DeclareLaunchArgument(
-        'navgoal_topic', default_value='goal_pose',
+        'navgoal_topic', default_value='hunav_goal_pose',
         description='Name of the topic in which navigation goal for the robot will be published'
     )
     declare_navigation = DeclareLaunchArgument(
@@ -398,6 +407,7 @@ def generate_launch_description():
     ld.add_action(hunav_manager_node)
     # hunav evaluator
     ld.add_action(hunav_evaluator_node)
+    ld.add_action(action_monitor_node)
 
     # launch Gazebo after worldGenerator 
     ld.add_action(gz_launch_event)

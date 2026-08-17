@@ -187,7 +187,7 @@ void HuNavPlugin::Load(gazebo::physics::WorldPtr _world, sdf::ElementPtr _sdf)
     if (_sdf->HasElement("navgoal_topic"))
       hnav_->goalTopic = _sdf->Get<std::string>("navgoal_topic");
     else
-      hnav_->goalTopic = "goal_pose";
+      hnav_->goalTopic = "hunav_goal_pose";
   }
   else
   {
