@@ -1,0 +1,92 @@
+hunav_loader:
+  ros__parameters:
+    yaml_base_name: cafe_agents_test
+    simulator: Gazebo Classic
+    map: cafe
+    publish_people: true
+    global_goals:
+      1:
+        x: -3.728
+        y: -8.481
+      2:
+        x: -3.216
+        y: 3.040
+      3:
+        x: 2.896
+        y: -3.073
+      4:
+        x: 0.400
+        y: 5.538
+    agents:
+      - agent1
+      - agent2
+      - agent3
+    agent1:
+      id: 1
+      group_id: 1
+      skin: 1
+      max_vel: 1.5
+      radius: 0.4
+      goal_radius: 0.3
+      cyclic_goals: true
+      init_pose:
+        x: -3.085
+        y: 3.709
+        z: 1.250
+        h: -1.547
+      behavior:
+        type: Regular
+        configuration: 2
+        goal_force_factor: 3.9
+        obstacle_force_factor: 7.1
+        social_force_factor: 3.0
+        other_force_factor: 20.0
+      goals:
+        - 1
+        - 2
+    agent2:
+      id: 2
+      group_id: 2
+      skin: 2
+      max_vel: 1.0
+      radius: 0.4
+      goal_radius: 0.3
+      cyclic_goals: true
+      init_pose:
+        x: 2.892
+        y: -2.397
+        z: 1.250
+        h: 1.816
+      behavior:
+        type: Regular
+        configuration: 0
+        goal_force_factor: 2.0
+        obstacle_force_factor: 10.0
+        social_force_factor: 5.0
+        other_force_factor: 20.0
+      goals:
+        - 4
+        - 3
+    agent3:
+      id: 3
+      group_id: 3
+      skin: 3
+      max_vel: 1.5
+      radius: 0.4
+      goal_radius: 0.3
+      cyclic_goals: true
+      init_pose:
+        x: -2.892
+        y: -7.319
+        z: 1.250
+        h: 1.571
+      behavior:
+        type: Regular
+        configuration: 0
+        goal_force_factor: 2.0
+        obstacle_force_factor: 10.0
+        social_force_factor: 5.0
+        other_force_factor: 20.0
+      goals:
+        - 2
+        - 1

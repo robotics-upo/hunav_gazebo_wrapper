@@ -33,6 +33,7 @@ def generate_launch_description():
     global_frame = LaunchConfiguration('global_frame_to_publish')
     use_navgoal = LaunchConfiguration('use_navgoal_to_start')
     navgoal_topic = LaunchConfiguration('navgoal_topic')
+    odom_topic = LaunchConfiguration('odom_topic')
     ignore_models = LaunchConfiguration('ignore_models')
     navigation = LaunchConfiguration('navigation')
 
@@ -267,12 +268,15 @@ def generate_launch_description():
         'config',
         LaunchConfiguration('metrics_file')
     ])
+    
+    result_file_path = LaunchConfiguration('results_path')
+
     # hunav_evaluator node
     hunav_evaluator_node = Node(
         package='hunav_evaluator',
         executable='hunav_evaluator_node',
         output='screen',
-        parameters=[metrics_file]
+        parameters=[metrics_file, {'result_file': result_file_path}]
     )
 
     # action_monitor_node
@@ -280,11 +284,13 @@ def generate_launch_description():
     # if navigation is enabled, this node will be launched.
     # It uses the navgoal action server to check for goal 
     # for navigation completion and to start/stop the recording. 
-    action_monitor_node = Node(
+    hunav_action_monitor_node = Node(
         package='hunav_evaluator',
-        executable='action_monitor_node',
-        name='action_monitor_node',
+        executable='hunav_action_monitor_node',
+        name='hunav_action_monitor_node',
         output='screen',
+        parameters=[{'use_sim_time': True},
+                    {'topic_goal': navgoal_topic}],
         condition=IfCondition(use_navgoal)
     )
 
@@ -293,11 +299,14 @@ def generate_launch_description():
     # to teleoperate the robot instead of using the navigation stack.
     # It subscribes to the RViz clicked_point topic to start the recording 
     # and finishes it when the robot reaches the goal.
-    teleop_monitor_node = Node(
+    hunav_teleop_monitor_node = Node(
         package='hunav_evaluator',
-        executable='teleop_monitor_node',
-        name='teleop_monitor_node',
-        output='screen'
+        executable='hunav_teleop_monitor_node',
+        name='hunav_teleop_monitor_node',
+        output='screen',
+        parameters=[{'use_sim_time': True},
+                    {'topic_goal': navgoal_topic},
+                    {'odom_topic': odom_topic}]
     )
 
     # DO NOT Launch this if any robot localization is launched
@@ -316,6 +325,10 @@ def generate_launch_description():
     declare_metrics_conf_file = DeclareLaunchArgument(
         'metrics_file', default_value='metrics.yaml',
         description='Specify the name of the metrics configuration file in the cofig directory'
+    )
+    declare_results_path = DeclareLaunchArgument(
+        'results_path', default_value='/home/hunav_gz_classic_ws/src/hunav_sim/hunav_evaluator/results',
+        description='Specify the absolute path to store the evaluation results'
     )
     # declare_arg_world = DeclareLaunchArgument(
     #     'base_world', default_value='no_roof_small_warehouse.world',
@@ -349,6 +362,10 @@ def generate_launch_description():
     declare_navgoal_topic = DeclareLaunchArgument(
         'navgoal_topic', default_value='hunav_goal_pose',
         description='Name of the topic in which navigation goal for the robot will be published'
+    )
+    declare_odom_topic = DeclareLaunchArgument(
+        'odom_topic', default_value='/mobile_base_controller/odom',
+        description='Name of the topic in which odometry for the robot will be published'
     )
     declare_navigation = DeclareLaunchArgument(
         'navigation', default_value='False',
@@ -393,6 +410,7 @@ def generate_launch_description():
     # Declare the launch arguments
     ld.add_action(declare_agents_conf_file)
     ld.add_action(declare_metrics_conf_file)
+    ld.add_action(declare_results_path)
     ld.add_action(declare_arg_environment)
     ld.add_action(declare_gz_obs)
     ld.add_action(declare_update_rate)
@@ -400,6 +418,7 @@ def generate_launch_description():
     ld.add_action(declare_frame_to_publish)
     ld.add_action(declare_use_navgoal)
     ld.add_action(declare_navgoal_topic)
+    ld.add_action(declare_odom_topic)
     ld.add_action(declare_navigation)
     ld.add_action(declare_ignore_models)
     ld.add_action(declare_arg_verbose)
@@ -423,7 +442,8 @@ def generate_launch_description():
     ld.add_action(hunav_manager_node)
     # hunav evaluator
     ld.add_action(hunav_evaluator_node)
-    ld.add_action(action_monitor_node)
+    ld.add_action(hunav_action_monitor_node)
+    ld.add_action(hunav_teleop_monitor_node)
 
     # launch Gazebo after worldGenerator 
     ld.add_action(gz_launch_event)

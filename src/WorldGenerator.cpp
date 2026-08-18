@@ -120,12 +120,13 @@ void WorldGenerator::readPluginParams()
 void WorldGenerator::readAgentParams()
 {
   auto parameters_client = std::make_shared<rclcpp::SyncParametersClient>(this, "hunav_loader");
-  while (!parameters_client->wait_for_service(1s))
+  while (!parameters_client->wait_for_service(2s))
   {
     if (!rclcpp::ok())
     {
       RCLCPP_ERROR(this->get_logger(), "Interrupted while waiting for the service. Exiting.");
       rclcpp::shutdown();
+      return;
     }
     RCLCPP_INFO(this->get_logger(), "service not available, waiting again...");
   }

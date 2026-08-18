@@ -128,6 +128,7 @@ public:
 
   bool waitForGoal;
   bool goalReceived;
+  int counter;
   bool useCollision;
   std::string goalTopic;
 
@@ -193,6 +194,7 @@ void HuNavPlugin::Load(gazebo::physics::WorldPtr _world, sdf::ElementPtr _sdf)
   {
     hnav_->goalReceived = true;
   }
+  hnav_->counter = 0;
 
   // Read models to be ignored
   if (_sdf->HasElement("ignore_models"))
@@ -905,7 +907,11 @@ void HuNavPluginPrivate::UpdateGazeboPedestrians(const gazebo::common::UpdateInf
 {
   if (goalReceived == false)
   {
-    RCLCPP_INFO(rosnode->get_logger(), "HuNavPlugin. Waiting to receive the robot navigation goal...");
+    counter++;
+    if (counter == 1000) {
+      RCLCPP_INFO(rosnode->get_logger(), "HuNavPlugin. Waiting to receive the robot navigation goal...");
+      counter = 0;
+    }
     return;
   }
 
