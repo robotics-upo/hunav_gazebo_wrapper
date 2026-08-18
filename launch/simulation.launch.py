@@ -276,12 +276,28 @@ def generate_launch_description():
     )
 
     # action_monitor_node
+    # This node controls the recording of the experiments.
+    # if navigation is enabled, this node will be launched.
+    # It uses the navgoal action server to check for goal 
+    # for navigation completion and to start/stop the recording. 
     action_monitor_node = Node(
         package='hunav_evaluator',
         executable='action_monitor_node',
         name='action_monitor_node',
         output='screen',
         condition=IfCondition(use_navgoal)
+    )
+
+    # teleop_monitor_node
+    # This node controls the recording of the experiments in case we want
+    # to teleoperate the robot instead of using the navigation stack.
+    # It subscribes to the RViz clicked_point topic to start the recording 
+    # and finishes it when the robot reaches the goal.
+    teleop_monitor_node = Node(
+        package='hunav_evaluator',
+        executable='teleop_monitor_node',
+        name='teleop_monitor_node',
+        output='screen'
     )
 
     # DO NOT Launch this if any robot localization is launched
